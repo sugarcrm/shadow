@@ -527,8 +527,8 @@ static int shadow_mkdir(php_stream_wrapper *wrapper, char *dir, int mode, int op
 		dir = instname;
 		/* always use recursive to create unexisting paths */
 		options |= PHP_STREAM_MKDIR_RECURSIVE;
+		ensure_dir_exists(instname, wrapper, context TSRMLS_CC);
 	}
-	ensure_dir_exists(instname, wrapper, context TSRMLS_CC);
 	if(SHADOW_G(debug) & SHADOW_DEBUG_MKDIR)  fprintf(stderr, "Mkdir: %s (%s) %d\n", dir, instname, options);	
 	res = plain_ops->stream_mkdir(wrapper, dir, mode, options, context TSRMLS_CC);
 	if(!res && (SHADOW_G(debug) & SHADOW_DEBUG_FAIL)) {
