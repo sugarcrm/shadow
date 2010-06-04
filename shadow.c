@@ -31,6 +31,9 @@
 
 ZEND_DECLARE_MODULE_GLOBALS(shadow)
 
+PHP_FUNCTION(shadow);
+PHP_FUNCTION(shadow_get_config);
+
 static php_stream_wrapper_ops shadow_wrapper_ops;
 php_stream_wrapper shadow_wrapper = {
 	&shadow_wrapper_ops,
@@ -75,6 +78,7 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, ch
  */
 const zend_function_entry shadow_functions[] = {
 	PHP_FE(shadow,	NULL)	
+	PHP_FE(shadow_get_config,	NULL)	
 	{NULL, NULL, NULL}	
 };
 /* }}} */
@@ -107,7 +111,7 @@ ZEND_GET_MODULE(shadow)
  */
 PHP_INI_BEGIN()
     STD_PHP_INI_ENTRY("shadow.enabled",      "1", PHP_INI_ALL, OnUpdateBool, enabled, zend_shadow_globals, shadow_globals)
-    STD_PHP_INI_ENTRY("shadow.mkdir_mask",      "493", PHP_INI_ALL, OnUpdateLong, mkdir_mask, zend_shadow_globals, shadow_globals)
+    STD_PHP_INI_ENTRY("shadow.mkdir_mask",      "0755", PHP_INI_ALL, OnUpdateLong, mkdir_mask, zend_shadow_globals, shadow_globals)
     STD_PHP_INI_ENTRY("shadow.debug",      "0", PHP_INI_ALL, OnUpdateLong, debug, zend_shadow_globals, shadow_globals)
 PHP_INI_END()
 /* }}} */
@@ -284,6 +288,33 @@ PHP_FUNCTION(shadow)
 }
 /* }}} */
 
+/* {{{ proto array shadow_get_config()
+   Retrieve current shadow configuration */
+PHP_FUNCTION(shadow_get_config)
+{
+	zval *instance_only;
+	int i;
+	
+	if (zend_parse_parameters_none() == FAILURE) {
+		return;
+	}
+	
+	if(!SHADOW_G(enabled)) {
+		RETURN_FALSE;
+	}
+	
+	array_init_size(return_value, 3);
+	add_assoc_string(return_value, "template", SHADOW_G(template)?SHADOW_G(template):"", 1);
+	add_assoc_string(return_value, "instance", SHADOW_G(instance)?SHADOW_G(instance):"", 1);
+	ALLOC_INIT_ZVAL(instance_only);
+	array_init_size(instance_only, SHADOW_G(instance_only_count));
+	for(i=0;i<SHADOW_G(instance_only_count);i++) {
+		add_next_index_string(instance_only, SHADOW_G(instance_only)[i], 1);
+	}
+	add_assoc_zval(return_value, "instance_only", instance_only);
+}
+/* }}} */
+
 /*
  Check if the path is among "instance only" pathes
 */
@@ -414,7 +445,11 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 
 static void ensure_dir_exists(char *pathname, php_stream_wrapper *wrapper, php_stream_context *context TSRMLS_DC)
 {
-	int dir_len = zend_dirname(pathname, strlen(pathname));
+	int dir_len;
+	if(!pathname) {
+		return;
+	}
+	dir_len = zend_dirname(pathname, strlen(pathname));
 	if(VCWD_ACCESS(pathname, F_OK) != 0) {
 		/* does not exist */
 		if(SHADOW_G(debug) & SHADOW_DEBUG_ENSURE)	 fprintf(stderr, "Creating: %s %ld\n", pathname, SHADOW_G(mkdir_mask));	
@@ -527,9 +562,8 @@ static int shadow_mkdir(php_stream_wrapper *wrapper, char *dir, int mode, int op
 		dir = instname;
 		/* always use recursive to create unexisting paths */
 		options |= PHP_STREAM_MKDIR_RECURSIVE;
-		ensure_dir_exists(instname, wrapper, context TSRMLS_CC);
 	}
-	if(SHADOW_G(debug) & SHADOW_DEBUG_MKDIR)  fprintf(stderr, "Mkdir: %s (%s) %d\n", dir, instname, options);	
+	if(SHADOW_G(debug) & SHADOW_DEBUG_MKDIR)  fprintf(stderr, "Mkdir: %s (%s) %d %d\n", dir, instname, mode, options);	
 	res = plain_ops->stream_mkdir(wrapper, dir, mode, options, context TSRMLS_CC);
 	if(!res && (SHADOW_G(debug) & SHADOW_DEBUG_FAIL)) {
 		fprintf(stderr, "Mkdir FAIL: %s %d %d [%d]\n", dir, mode, options, errno);	

@@ -1,3 +1,16 @@
 .deps
 *.lo
 *.la
+tmtags
+Makefile*
+acinclude.m4
+aclocal.m4
+autom4te.cache
+build
+config.*
+configure*
+install-sh
+ltmain.sh
+missing
+mkinstalldirs
+run-tests.php
