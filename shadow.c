@@ -72,12 +72,19 @@ static int shadow_mkdir(php_stream_wrapper *wrapper, char *dir, int mode, int op
 static int shadow_rmdir(php_stream_wrapper *wrapper, char *url, int options, php_stream_context *context TSRMLS_DC);
 static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, char *mode, int options, char **opened_path, php_stream_context *context STREAMS_DC TSRMLS_DC);
 
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_shadow, 0, 0, 2)
+	ZEND_ARG_INFO(0, template)
+	ZEND_ARG_INFO(0, instance)
+	ZEND_ARG_INFO(0, instance_only)
+ZEND_END_ARG_INFO()
+
 /* {{{ shadow_functions[]
  *
  * Every user visible function must have an entry in shadow_functions[].
  */
 const zend_function_entry shadow_functions[] = {
-	PHP_FE(shadow,	NULL)	
+	PHP_FE(shadow,	arginfo_shadow)	
 	PHP_FE(shadow_get_config,	NULL)	
 	{NULL, NULL, NULL}	
 };
