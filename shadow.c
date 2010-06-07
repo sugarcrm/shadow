@@ -59,6 +59,7 @@ static php_stream_ops shadow_dirstream_ops = {
 
 static php_stream_wrapper_ops *plain_ops;
 static char *(*old_resolve_path)(const char *filename, int filename_len TSRMLS_DC);
+static void (*orig_touch)(INTERNAL_FUNCTION_PARAMETERS);
 
 static char *shadow_resolve_path(const char *filename, int filename_len TSRMLS_DC);
 static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filename, char *mode, 
@@ -71,7 +72,7 @@ static int shadow_rename(php_stream_wrapper *wrapper, char *url_from, char *url_
 static int shadow_mkdir(php_stream_wrapper *wrapper, char *dir, int mode, int options, php_stream_context *context TSRMLS_DC);
 static int shadow_rmdir(php_stream_wrapper *wrapper, char *url, int options, php_stream_context *context TSRMLS_DC);
 static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, char *mode, int options, char **opened_path, php_stream_context *context STREAMS_DC TSRMLS_DC);
-
+static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS);
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_shadow, 0, 0, 2)
 	ZEND_ARG_INFO(0, template)
@@ -81,7 +82,6 @@ ZEND_END_ARG_INFO()
 
 /* {{{ shadow_functions[]
  *
- * Every user visible function must have an entry in shadow_functions[].
  */
 const zend_function_entry shadow_functions[] = {
 	PHP_FE(shadow,	arginfo_shadow)	
@@ -93,19 +93,15 @@ const zend_function_entry shadow_functions[] = {
 /* {{{ shadow_module_entry
  */
 zend_module_entry shadow_module_entry = {
-#if ZEND_MODULE_API_NO >= 20010901
 	STANDARD_MODULE_HEADER,
-#endif
 	"shadow",
 	shadow_functions,
 	PHP_MINIT(shadow),
 	PHP_MSHUTDOWN(shadow),
-	PHP_RINIT(shadow),		/* Replace with NULL if there's nothing to do at request start */
-	PHP_RSHUTDOWN(shadow),	/* Replace with NULL if there's nothing to do at request end */
+	PHP_RINIT(shadow),		
+	PHP_RSHUTDOWN(shadow),	
 	PHP_MINFO(shadow),
-#if ZEND_MODULE_API_NO >= 20010901
-	"0.1", /* Replace with version number for your extension */
-#endif
+	"0.1", 
 	STANDARD_MODULE_PROPERTIES
 };
 /* }}} */
@@ -132,10 +128,19 @@ static void php_shadow_init_globals(zend_shadow_globals *shadow_globals)
 /* }}} */
 #define SHADOW_CONSTANT(C) 		REGISTER_LONG_CONSTANT(#C, C, CONST_CS)
 
+#define SHADOW_OVERRIDE(func) \
+	orig_##func = NULL; \
+	if (zend_hash_find(CG(function_table), #func, sizeof(#func), (void **)&orig) == SUCCESS) { \
+        orig_##func = orig->internal_function.handler; \
+        orig->internal_function.handler = shadow_##func; \
+	}
+
 /* {{{ PHP_MINIT_FUNCTION
  */
 PHP_MINIT_FUNCTION(shadow)
 {
+	zend_function *orig;
+	
 	REGISTER_INI_ENTRIES();
 	
 	SHADOW_CONSTANT(SHADOW_DEBUG_FULLPATH);
@@ -148,6 +153,8 @@ PHP_MINIT_FUNCTION(shadow)
 	SHADOW_CONSTANT(SHADOW_DEBUG_RENAME);
 	SHADOW_CONSTANT(SHADOW_DEBUG_PATHCHECK);
 	SHADOW_CONSTANT(SHADOW_DEBUG_ENSURE);
+	SHADOW_CONSTANT(SHADOW_DEBUG_FAIL);
+	SHADOW_CONSTANT(SHADOW_DEBUG_TOUCH);
 	
 	plain_ops = php_plain_files_wrapper.wops;
 
@@ -165,6 +172,8 @@ PHP_MINIT_FUNCTION(shadow)
 		old_resolve_path = zend_resolve_path;
 		zend_resolve_path = shadow_resolve_path;
 	}
+	
+	SHADOW_OVERRIDE(touch);
 	
 	return SUCCESS;
 }
@@ -284,7 +293,7 @@ PHP_FUNCTION(shadow)
 		SHADOW_G(instance_only_count) = zend_hash_num_elements(instance_only);
 		SHADOW_G(instance_only) = ecalloc(SHADOW_G(instance_only_count), sizeof(char *));
 		zend_hash_internal_pointer_reset_ex(instance_only, &pos);
-		while(zend_hash_get_current_data_ex(instance_only, (void **)&item, &pos) == SUCCESS) {
+			while(zend_hash_get_current_data_ex(instance_only, (void **)&item, &pos) == SUCCESS) {
 			convert_to_string(*item);
 			SHADOW_G(instance_only)[i++] = estrndup(Z_STRVAL_PP(item), Z_STRLEN_PP(item));
 			zend_hash_move_forward_ex(instance_only, &pos);
@@ -695,6 +704,77 @@ static int shadow_dirstream_rewind(php_stream *stream, off_t offset, int whence,
 	zend_hash_internal_pointer_reset((HashTable *)stream->abstract);
 	return 0;
 }
+
+/*
+Find Nth argument of a current function call
+*/
+static zval **shadow_get_arg(int arg TSRMLS_DC)
+{
+	void **p;
+	int arg_count;
+
+	if(!EG(current_execute_data)) {
+		return NULL;
+	}
+	
+	p = EG(current_execute_data)->function_state.arguments;
+	if(!p) {
+		return NULL;
+	}
+	
+	arg_count = (int)(zend_uintptr_t) *p;
+	if(arg >= arg_count) {
+		return NULL;
+	}
+	
+	p -= arg_count;
+	p += arg;
+	
+	return (zval **)p;
+}
+
+/* {{{ proto bool touch(string filename [, int time [, int atime]])
+   Set modification time of file */
+static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS)
+{
+	char *filename;
+	int filename_len;
+	long filetime = 0, fileatime = 0;
+	char *instname;
+
+	if(SHADOW_G(instance) == NULL || SHADOW_G(template) == NULL) {
+		orig_touch(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		return;
+	}
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|ll", &filename, &filename_len, &filetime, &fileatime) == FAILURE) {
+		return;
+	}
+	instname = template_to_instance(filename, 0 TSRMLS_CC);
+	
+	if(SHADOW_G(debug) & SHADOW_DEBUG_TOUCH) fprintf(stderr, "Touching %s (%s)\n", filename, instname);
+	if(instname) {
+		zval **name;
+		zval *old_name, *new_name;
+		ensure_dir_exists(instname, &shadow_wrapper, NULL TSRMLS_CC);
+		name = shadow_get_arg(0 TSRMLS_CC);
+		if(!name || !*name) {
+			orig_touch(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+			return;
+		}
+		old_name = *name;
+		ALLOC_INIT_ZVAL(new_name);
+		ZVAL_STRING(new_name, instname, 0);
+		*name = new_name;
+		orig_touch(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		*name = old_name;
+		zval_ptr_dtor(&new_name);
+		return;
+	}
+	orig_touch(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+}
+
+/* TODO: chmod, chown */
 
 /*
  * Local variables:
