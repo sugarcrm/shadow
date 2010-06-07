@@ -60,6 +60,7 @@ static php_stream_ops shadow_dirstream_ops = {
 static php_stream_wrapper_ops *plain_ops;
 static char *(*old_resolve_path)(const char *filename, int filename_len TSRMLS_DC);
 static void (*orig_touch)(INTERNAL_FUNCTION_PARAMETERS);
+static void (*orig_chmod)(INTERNAL_FUNCTION_PARAMETERS);
 
 static char *shadow_resolve_path(const char *filename, int filename_len TSRMLS_DC);
 static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filename, char *mode, 
@@ -73,6 +74,7 @@ static int shadow_mkdir(php_stream_wrapper *wrapper, char *dir, int mode, int op
 static int shadow_rmdir(php_stream_wrapper *wrapper, char *url, int options, php_stream_context *context TSRMLS_DC);
 static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, char *mode, int options, char **opened_path, php_stream_context *context STREAMS_DC TSRMLS_DC);
 static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS);
+static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS);
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_shadow, 0, 0, 2)
 	ZEND_ARG_INFO(0, template)
@@ -134,6 +136,8 @@ static void php_shadow_init_globals(zend_shadow_globals *shadow_globals)
         orig_##func = orig->internal_function.handler; \
         orig->internal_function.handler = shadow_##func; \
 	}
+	
+#define SHADOW_ENABLED() (SHADOW_G(enabled) != 0 && SHADOW_G(instance) != NULL && SHADOW_G(template) != NULL)
 
 /* {{{ PHP_MINIT_FUNCTION
  */
@@ -174,6 +178,7 @@ PHP_MINIT_FUNCTION(shadow)
 	}
 	
 	SHADOW_OVERRIDE(touch);
+	SHADOW_OVERRIDE(chmod);
 	
 	return SUCCESS;
 }
@@ -360,7 +365,7 @@ static int is_instance_only(const char *filename TSRMLS_DC)
 	int fnamelen = strlen(filename);
 	char *newname = NULL;
 
-	if(SHADOW_G(template) == NULL || SHADOW_G(instance) == NULL || SHADOW_G(instance_only) == NULL) {
+	if(!SHADOW_ENABLED() || SHADOW_G(instance_only) == NULL) {
 		return 0;
 	}
 
@@ -411,7 +416,7 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 	int fnamelen = strlen(filename);
 	char *newname = NULL;
 
-	if(SHADOW_G(template) == NULL || SHADOW_G(instance) == NULL) {
+	if(!SHADOW_ENABLED()) {
 		return NULL;
 	}
 
@@ -742,7 +747,7 @@ static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS)
 	long filetime = 0, fileatime = 0;
 	char *instname;
 
-	if(SHADOW_G(instance) == NULL || SHADOW_G(template) == NULL) {
+	if(!SHADOW_ENABLED()) {
 		orig_touch(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
@@ -772,6 +777,50 @@ static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS)
 		return;
 	}
 	orig_touch(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+}
+
+/* {{{ proto bool chmod(string filename, int mode)
+   Change file mode */
+static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS)
+{
+	char *filename;
+	int filename_len;
+	long mode;
+	int ret;
+	mode_t imode;
+	char *instname;
+
+	if(!SHADOW_ENABLED()) {
+		orig_chmod(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		return;
+	}
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &filename, &filename_len, &mode) == FAILURE) {
+		return;
+	}
+	instname = template_to_instance(filename, 1 TSRMLS_CC);
+	
+	if(SHADOW_G(debug) & SHADOW_DEBUG_TOUCH) fprintf(stderr, "Chmod %s (%s) %ld\n", filename, instname, mode);
+	
+	if(instname) {
+		zval **name;
+		zval *old_name, *new_name;
+		name = shadow_get_arg(0 TSRMLS_CC);
+		if(!name || !*name) {
+			orig_chmod(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+			return;
+		}
+		old_name = *name;
+		ALLOC_INIT_ZVAL(new_name);
+		ZVAL_STRING(new_name, instname, 0);
+		*name = new_name;
+		orig_chmod(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		*name = old_name;
+		zval_ptr_dtor(&new_name);
+		return;
+	}
+	
+	orig_chmod(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 }
 
 /* TODO: chmod, chown */
