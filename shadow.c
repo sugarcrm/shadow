@@ -159,6 +159,7 @@ PHP_MINIT_FUNCTION(shadow)
 	SHADOW_CONSTANT(SHADOW_DEBUG_ENSURE);
 	SHADOW_CONSTANT(SHADOW_DEBUG_FAIL);
 	SHADOW_CONSTANT(SHADOW_DEBUG_TOUCH);
+	SHADOW_CONSTANT(SHADOW_DEBUG_CHMOD);
 	
 	plain_ops = php_plain_files_wrapper.wops;
 
@@ -800,7 +801,7 @@ static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS)
 	}
 	instname = template_to_instance(filename, 1 TSRMLS_CC);
 	
-	if(SHADOW_G(debug) & SHADOW_DEBUG_TOUCH) fprintf(stderr, "Chmod %s (%s) %ld\n", filename, instname, mode);
+	if(SHADOW_G(debug) & SHADOW_DEBUG_CHMOD) fprintf(stderr, "Chmod %s (%s) %ld\n", filename, instname, mode);
 	
 	if(instname) {
 		zval **name;
@@ -823,7 +824,7 @@ static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS)
 	orig_chmod(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 }
 
-/* TODO: chmod, chown */
+/* TODO: chown */
 
 /*
  * Local variables:

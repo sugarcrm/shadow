@@ -54,6 +54,7 @@ PHP_MINFO_FUNCTION(shadow);
 #define SHADOW_DEBUG_ENSURE		(1<<9)
 #define SHADOW_DEBUG_FAIL		(1<<10)
 #define SHADOW_DEBUG_TOUCH		(1<<11)
+#define SHADOW_DEBUG_CHMOD		(1<<11)
 
 ZEND_BEGIN_MODULE_GLOBALS(shadow)
 	/* config vars */
