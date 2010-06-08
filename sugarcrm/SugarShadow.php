@@ -35,6 +35,7 @@ class SugarShadow{
 		mkdir($path . '/cache/pdf', 0775, true);
 		mkdir($path . '/cache/upload', 0775, true);
 		mkdir($path . '/cache/xml', 0775, true);
+		mkdir($path . '/custom', 0775, true);
 	}
 	
 	/**
