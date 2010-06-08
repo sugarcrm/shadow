@@ -458,10 +458,10 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 		}
 	}
 	
+	if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK)	fprintf(stderr, "Path check: %s => %s\n", filename, newname);
 	if(realpath) {
 		efree(realpath);
 	}
-	if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK)	fprintf(stderr, "Path check: %s => %s\n", filename, newname);
 	return newname;
 }
 
