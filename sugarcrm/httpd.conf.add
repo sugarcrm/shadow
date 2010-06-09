@@ -1,0 +1,7 @@
+<VirtualHost majic.com>
+    DocumentRoot /Users/mitani/code/builds/Mango/ent/sugarcrm
+    ServerName shadow.com
+    ServerAlias *.shadow.com
+	RewriteEngine On
+	RewriteRule ^(/(cache|custom)/.*) /Users/mitani/code/instances/%{SERVER_NAME}/$1
+</VirtualHost>
