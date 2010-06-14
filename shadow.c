@@ -34,6 +34,7 @@ ZEND_DECLARE_MODULE_GLOBALS(shadow)
 
 PHP_FUNCTION(shadow);
 PHP_FUNCTION(shadow_get_config);
+PHP_FUNCTION(shadow_clear_cache);
 
 static php_stream_wrapper_ops shadow_wrapper_ops;
 php_stream_wrapper shadow_wrapper = {
@@ -91,6 +92,7 @@ ZEND_END_ARG_INFO()
 const zend_function_entry shadow_functions[] = {
 	PHP_FE(shadow,	arginfo_shadow)	
 	PHP_FE(shadow_get_config,	NULL)	
+	PHP_FE(shadow_clear_cache,	NULL)	
 	{NULL, NULL, NULL}	
 };
 /* }}} */
@@ -252,7 +254,6 @@ static void shadow_free_data()
 	}
 }
 
-/* Remove if there's nothing to do at request end */
 /* {{{ PHP_RSHUTDOWN_FUNCTION
  */
 PHP_RSHUTDOWN_FUNCTION(shadow)
@@ -356,6 +357,29 @@ PHP_FUNCTION(shadow_get_config)
 		add_next_index_string(instance_only, SHADOW_G(instance_only)[i], 1);
 	}
 	add_assoc_zval(return_value, "instance_only", instance_only);
+}
+/* }}} */
+
+/* {{{ proto array shadow_clear_cache()
+   Clear cached data */
+PHP_FUNCTION(shadow_clear_cache)
+{
+	zval *instance_only;
+	int i;
+	
+	if (zend_parse_parameters_none() == FAILURE) {
+		return;
+	}
+	
+	if(!SHADOW_G(enabled)) {
+		RETURN_FALSE;
+	}
+	
+	shadow_cache_clean(TSRMLS_C);
+	if(SHADOW_G(curdir)) {
+		free(SHADOW_G(curdir));
+		SHADOW_G(curdir) = NULL;
+	}
 }
 /* }}} */
 
