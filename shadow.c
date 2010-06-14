@@ -455,6 +455,7 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 	
 	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), filename, fnamelen)) {
 		if(check_exists && shadow_cache_get(filename, fnamelen, &newname) == SUCCESS) {
+			if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK)	fprintf(stderr, "Path check from cache: %s => %s\n", filename, newname);
 			return newname;
 		}
 		/* starts with template - rewrite to instance */
