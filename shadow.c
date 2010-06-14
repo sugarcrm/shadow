@@ -291,12 +291,12 @@ PHP_FUNCTION(shadow)
 		RETURN_TRUE;
 	}
 	
-	SHADOW_G(template) = old_resolve_path(temp, temp_len);
+	SHADOW_G(template) = zend_resolve_path(temp, temp_len);
 	if(!SHADOW_G(template)) {
 		RETURN_FALSE;
 	}
 	SHADOW_G(template_len) = strlen(SHADOW_G(template));
-	SHADOW_G(instance) = old_resolve_path(inst, inst_len);
+	SHADOW_G(instance) = zend_resolve_path(inst, inst_len);
 	if(!SHADOW_G(instance)) {
 		efree(SHADOW_G(template));
 		SHADOW_G(template) = NULL;
