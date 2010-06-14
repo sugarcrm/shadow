@@ -197,6 +197,7 @@ PHP_MINIT_FUNCTION(shadow)
 */	
 	SHADOW_OVERRIDE(touch);
 	SHADOW_OVERRIDE(chmod);
+	SHADOW_OVERRIDE(chdir);
 	
 	return SUCCESS;
 }
@@ -880,7 +881,7 @@ static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS)
 }
 
 /* {{{ proto bool chdir(string filename)
-   Change file mode */
+   Change current dir */
 static void shadow_chdir(INTERNAL_FUNCTION_PARAMETERS)
 {
 	char *str;
