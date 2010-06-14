@@ -28,6 +28,7 @@
 #include "php_shadow.h"
 #include "php_streams.h"
 #include <fcntl.h>
+#include "shadow_cache.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(shadow)
 
@@ -92,6 +93,23 @@ const zend_function_entry shadow_functions[] = {
 };
 /* }}} */
 
+/* {{{ php_shadow_init_globals
+ */
+static PHP_GINIT_FUNCTION(shadow)
+{
+	memset(shadow_globals, 0, sizeof(zend_shadow_globals));
+	zend_hash_init(&shadow_globals->cache, 10, NULL, NULL, 1); // persistent! 
+}
+/* }}} */
+
+/* {{{ php_shadow_shutdown_globals
+ */
+static PHP_GSHUTDOWN_FUNCTION(shadow)
+{
+	zend_hash_destroy(&shadow_globals->cache); 
+}
+/* }}} */
+
 /* {{{ shadow_module_entry
  */
 zend_module_entry shadow_module_entry = {
@@ -104,7 +122,11 @@ zend_module_entry shadow_module_entry = {
 	PHP_RSHUTDOWN(shadow),	
 	PHP_MINFO(shadow),
 	"0.1", 
-	STANDARD_MODULE_PROPERTIES
+    PHP_MODULE_GLOBALS(shadow),
+    PHP_GINIT(shadow),
+    PHP_GSHUTDOWN(shadow),
+    NULL,
+	STANDARD_MODULE_PROPERTIES_EX
 };
 /* }}} */
 
@@ -121,13 +143,6 @@ PHP_INI_BEGIN()
 PHP_INI_END()
 /* }}} */
 
-/* {{{ php_shadow_init_globals
- */
-static void php_shadow_init_globals(zend_shadow_globals *shadow_globals)
-{
-	memset(shadow_globals, 0, sizeof(zend_shadow_globals));
-}
-/* }}} */
 #define SHADOW_CONSTANT(C) 		REGISTER_LONG_CONSTANT(#C, C, CONST_CS)
 
 #define SHADOW_OVERRIDE(func) \
@@ -173,11 +188,11 @@ PHP_MINIT_FUNCTION(shadow)
 	shadow_wrapper_ops.dir_opener = shadow_dir_opener;
 	shadow_wrapper_ops.label = "shadow";
 	
-	if(SHADOW_G(enabled)) {
+/*	if(SHADOW_G(enabled)) {
 		old_resolve_path = zend_resolve_path;
 		zend_resolve_path = shadow_resolve_path;
 	}
-	
+*/	
 	SHADOW_OVERRIDE(touch);
 	SHADOW_OVERRIDE(chmod);
 	
@@ -439,18 +454,20 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 	}
 	
 	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), filename, fnamelen)) {
+		if(check_exists && shadow_cache_get(filename, fnamelen, &newname) == SUCCESS) {
+			return newname;
+		}
 		/* starts with template - rewrite to instance */
 		spprintf(&newname, MAXPATHLEN, "%s/%s", SHADOW_G(instance), filename+SHADOW_G(template_len)+1);
 		if(check_exists && !instance_only_subdir(filename+SHADOW_G(template_len)+1 TSRMLS_CC)) {
 			if(VCWD_ACCESS(newname, F_OK) != 0) {
 				/* file does not exist */
 				efree(newname);
-				if(realpath) {
-					efree(realpath);
-				}
-				return NULL;
+				newname = NULL;
 			}
+			/* drop down to return */
 		}
+		shadow_cache_put(filename, fnamelen, &newname);
 	} else if(is_subdir_of(SHADOW_G(instance), SHADOW_G(instance_len), filename, fnamelen)) {
 		if(check_exists) {
 			/* starts with instance, may want to check template too */
@@ -459,10 +476,7 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 				spprintf(&newname, MAXPATHLEN, "%s/%s", SHADOW_G(template), filename+SHADOW_G(instance_len)+1);
 			} else {
 				/* TODO: use realpath here too? */
-				if(realpath) {
-					efree(realpath);
-				}
-				return NULL;
+				newname = NULL;
 			}
 		} else {
 			/* use already resolved name if we are writing - this way we can use it for recursive mkdir */

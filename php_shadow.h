@@ -68,6 +68,7 @@ ZEND_BEGIN_MODULE_GLOBALS(shadow)
 	int instance_len;
 	char **instance_only;
 	int instance_only_count;
+	HashTable cache;
 ZEND_END_MODULE_GLOBALS(shadow)
 
 #ifdef ZTS
@@ -75,6 +76,8 @@ ZEND_END_MODULE_GLOBALS(shadow)
 #else
 #define SHADOW_G(v) (shadow_globals.v)
 #endif
+
+ZEND_EXTERN_MODULE_GLOBALS(shadow)
 
 #endif	/* PHP_SHADOW_H */
 

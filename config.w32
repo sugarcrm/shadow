@@ -8,6 +8,6 @@
 // ARG_ENABLE("shadow", "enable shadow support", "no");
 
 if (PHP_SHADOW != "no") {
-	EXTENSION("shadow", "shadow.c");
+	EXTENSION("shadow", "shadow.c shadow_cache.c");
 }
 
