@@ -467,7 +467,7 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 			}
 			/* drop down to return */
 		}
-		shadow_cache_put(filename, fnamelen, &newname);
+		shadow_cache_put(filename, fnamelen, newname);
 	} else if(is_subdir_of(SHADOW_G(instance), SHADOW_G(instance_len), filename, fnamelen)) {
 		if(check_exists) {
 			/* starts with instance, may want to check template too */
