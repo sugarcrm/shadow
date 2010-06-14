@@ -62,6 +62,7 @@ static php_stream_wrapper_ops *plain_ops;
 static char *(*old_resolve_path)(const char *filename, int filename_len TSRMLS_DC);
 static void (*orig_touch)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_chmod)(INTERNAL_FUNCTION_PARAMETERS);
+static void (*orig_chdir)(INTERNAL_FUNCTION_PARAMETERS);
 
 static char *shadow_resolve_path(const char *filename, int filename_len TSRMLS_DC);
 static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filename, char *mode, 
@@ -76,6 +77,7 @@ static int shadow_rmdir(php_stream_wrapper *wrapper, char *url, int options, php
 static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, char *mode, int options, char **opened_path, php_stream_context *context STREAMS_DC TSRMLS_DC);
 static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS);
+static void shadow_chdir(INTERNAL_FUNCTION_PARAMETERS);
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_shadow, 0, 0, 2)
 	ZEND_ARG_INFO(0, template)
@@ -220,6 +222,7 @@ PHP_RINIT_FUNCTION(shadow)
 	}
 	SHADOW_G(template) = NULL;
 	SHADOW_G(instance) = NULL;
+	SHADOW_G(curdir) = NULL;
 	return SUCCESS;
 }
 /* }}} */
@@ -241,6 +244,10 @@ static void shadow_free_data()
 		}
 		efree(SHADOW_G(instance_only));
 		SHADOW_G(instance_only) = NULL;
+	}
+	if(SHADOW_G(curdir)) {
+		free(SHADOW_G(curdir));
+		SHADOW_G(curdir) = NULL;
 	}
 }
 
@@ -429,6 +436,23 @@ static inline int is_subdir_of(const char *dir, int dirlen, const char *path, in
 	return 0;
 }
 
+static char *get_full_path(const char *filename TSRMLS_CC)
+{
+	cwd_state new_state;
+	
+	if(!SHADOW_G(curdir)) {
+		SHADOW_G(curdir) = getcwd(NULL, 0);
+	}
+	
+	new_state.cwd = strdup(SHADOW_G(curdir));
+	new_state.cwd_length = strlen(SHADOW_G(curdir));
+	if (virtual_file_ex(&new_state, filename, NULL, CWD_FILEPATH)) {
+    	if(new_state.cwd) free(new_state.cwd);
+        return NULL;
+    }
+	return estrndup(new_state.cwd, new_state.cwd_length);
+}
+
 /* 
 Returns new instance path or NULL if template path is OK
 filename is relative to template root
@@ -444,7 +468,7 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 	}
 
 	if(!IS_ABSOLUTE_PATH(filename, fnamelen)) {
-		realpath = expand_filepath(filename, NULL TSRMLS_CC);
+		realpath = get_full_path(filename TSRMLS_DC);
 		if(!realpath) {
 			return NULL;
 		}
@@ -855,6 +879,22 @@ static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS)
 	orig_chmod(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 }
 
+/* {{{ proto bool chdir(string filename)
+   Change file mode */
+static void shadow_chdir(INTERNAL_FUNCTION_PARAMETERS)
+{
+	char *str;
+	int ret, str_len;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &str, &str_len) == FAILURE) {
+		RETURN_FALSE;
+	}
+	if(SHADOW_G(curdir)) {
+		free(SHADOW_G(curdir));
+		SHADOW_G(curdir) = NULL;
+	}
+	orig_chdir(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+}
 /* TODO: chown */
 
 /*
