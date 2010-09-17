@@ -32,7 +32,7 @@ void shadow_cache_put(const char *name, int namelen, char *entry TSRMLS_CC)
 
 void shadow_cache_remove(const char *name, int namelen TSRMLS_CC)
 {
-	zend_hash_delete(&SHADOW_G(cache), name, namelen+1);
+	zend_hash_del(&SHADOW_G(cache), name, namelen+1);
 }
 
 void shadow_cache_clean(TSRMLS_C)
