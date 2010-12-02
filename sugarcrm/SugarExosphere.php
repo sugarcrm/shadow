@@ -38,13 +38,28 @@ class SugarExosphere{
 	 */
 	function addInstance($server){
 			$this->mongoConnect();
-			$cursor = $this->mongo->exosphere->instances->insert(array('key'=>md5($server), 'server'=>$server, 'path'=>$this->getInstancePath() . '/'. $server));
+			$ipath = $this->getInstancePath() . '/'. $server;
+			$cursor = $this->mongo->exosphere->instances->insert(array('key'=>md5($server), 'server'=>$server, 'path'=> $ipath));
 			if(!empty($this->config['shadow']['addHost'])){
 				$this->addToHostFile($server);
 			}
+			if(!empty($this->config['shadow']['createDir'])){
+				$this->configInstance($server);
+			}
 	}
 	
-
+	function configInstance($server) 
+	{
+		$ipath = $this->getInstancePath() . '/'. $server;
+		mkdir($ipath, 0755, true);
+		if(!empty($this->config['shadow']['siTemplate'])) {
+			require($this->config['shadow']['siTemplate']);
+			$sugar_config_si['setup_db_database_name'] .= preg_replace("/[^A-Za-z0-9]+/","_",$server);
+			$sugar_config_si['setup_site_url'] = str_replace('SERVER', $server, $sugar_config_si['setup_site_url']);
+			$config = '<?php $sugar_config_si = '.var_export($sugar_config_si, true).";";
+			file_put_contents($ipath."/config_si.php", $config);
+		}
+	}
 	
 	/**
 	 * 
