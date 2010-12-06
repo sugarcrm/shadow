@@ -77,7 +77,12 @@ class SugarExosphere{
 	 */
 	function addToHostFile($server){
 		$fp = fopen('/etc/hosts','a');
-		fwrite($fp, '127.0.0.1 ' . $server . "\n");
+		if(isset($this->config['shadow']['ip'])) {
+			$ip = $this->config['shadow']['ip'];
+		} else {
+			$ip = '127.0.0.1';
+		}
+		fwrite($fp, "$ip " . $server . "\n");
 		fclose($fp);
 		
 	}
