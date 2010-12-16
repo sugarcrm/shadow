@@ -492,18 +492,18 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 		return NULL;
 	}
 
-	if(!IS_ABSOLUTE_PATH(filename, fnamelen)) {
-		realpath = get_full_path(filename TSRMLS_DC);
-		if(SHADOW_G(debug) & SHADOW_DEBUG_FULLPATH)	fprintf(stderr, "Full path: %s\n", realpath);
-		if(!realpath) {
-			return NULL;
-		}
-		filename = realpath;
-		fnamelen = strlen(realpath);
+	/* Always get the full path since there can be symlinks and stuff like // or ..'s in there */
+	realpath = get_full_path(filename TSRMLS_DC);
+	if(SHADOW_G(debug) & SHADOW_DEBUG_FULLPATH)	fprintf(stderr, "Full path: %s\n", realpath);
+	if(!realpath) {
+		return NULL;
 	}
+	filename = realpath;
+	fnamelen = strlen(realpath);
 	
 	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), filename, fnamelen)) {
-		if(check_exists && shadow_cache_get(filename, fnamelen, &newname) == SUCCESS) {
+		// FIXME: disable caching for now, it doesn't work properly
+		if(0 && check_exists && shadow_cache_get(filename, fnamelen, &newname) == SUCCESS) {
 			if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK)	fprintf(stderr, "Path check from cache: %s => %s\n", filename, newname);
 			return newname;
 		}
@@ -611,6 +611,7 @@ static int shadow_stat(php_stream_wrapper *wrapper, char *url, int flags, php_st
 	}
 	if(instname) {
 		int res = plain_ops->url_stat(wrapper, instname, flags, ssb, context TSRMLS_CC);
+		if(SHADOW_G(debug) & SHADOW_DEBUG_STAT)  fprintf(stderr, "Stat res: %d\n", res);	
 		efree(instname);
 		return res;
 	}
