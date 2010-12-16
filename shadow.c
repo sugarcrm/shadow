@@ -573,7 +573,7 @@ static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filen
 		if(SHADOW_G(debug) & SHADOW_DEBUG_OPEN)  fprintf(stderr, "Opening: %s %s\n", filename, mode);
 	}
 	if(php_stream_parse_fopen_modes(mode, &flags) == SUCCESS) {
-		if(flags & O_WRONLY) {
+		if(flags & (O_WRONLY|O_RDWR)) {
 			// writing
 			char *instname = template_to_instance(filename, 0 TSRMLS_CC);
 			if(instname) {
@@ -886,6 +886,8 @@ static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS)
 	instname = template_to_instance(filename, 1 TSRMLS_CC);
 	
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_CHMOD) fprintf(stderr, "Chmod %s (%s) %ld\n", filename, instname, mode);
+	/* Clear cache because PHP caches non-plain-file stats */
+	php_clear_stat_cache(0, NULL, 0 TSRMLS_CC);
 	
 	if(instname) {
 		zval **name;
