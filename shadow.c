@@ -885,7 +885,7 @@ static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS)
 	}
 	instname = template_to_instance(filename, 1 TSRMLS_CC);
 	
-	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_CHMOD) fprintf(stderr, "Chmod %s (%s) %ld\n", filename, instname, mode);
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_CHMOD) fprintf(stderr, "Chmod %s (%s) %lo\n", filename, instname, mode);
 	/* Clear cache because PHP caches non-plain-file stats */
 	php_clear_stat_cache(0, NULL, 0 TSRMLS_CC);
 	
