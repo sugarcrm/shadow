@@ -494,10 +494,10 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 
 	if(!IS_ABSOLUTE_PATH(filename, fnamelen)) {
 		realpath = get_full_path(filename TSRMLS_DC);
+		if(SHADOW_G(debug) & SHADOW_DEBUG_FULLPATH)	fprintf(stderr, "Full path: %s\n", realpath);
 		if(!realpath) {
 			return NULL;
 		}
-		if(SHADOW_G(debug) & SHADOW_DEBUG_FULLPATH)	fprintf(stderr, "Full path: %s\n", realpath);
 		filename = realpath;
 		fnamelen = strlen(realpath);
 	}
