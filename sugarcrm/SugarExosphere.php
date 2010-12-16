@@ -48,16 +48,26 @@ class SugarExosphere{
 			}
 	}
 	
+	function configCacheDir($ipath, $from)
+	{
+		$paths = array("", "layout", "csv", "import", "pdf", "feeds", "images", "upload", "xml");
+		foreach($paths as $path) {
+			mkdir("$ipath/cache/$path", 0755, true);
+			copy("$from/cache/index.html", "$ipath/cache/$path/index.html");
+		}
+	}
+	
 	function configInstance($server) 
 	{
-		$ipath = $this->getInstancePath() . '/'. $server;
-		mkdir($ipath, 0755, true);
+		$path = $this->getInstancePath() . '/'. $server;
+		$this->configCacheDir($path, dirname(__FILE__));
+		mkdir($path . '/custom', 0775, true);
 		if(!empty($this->config['shadow']['siTemplate'])) {
 			require($this->config['shadow']['siTemplate']);
 			$sugar_config_si['setup_db_database_name'] .= preg_replace("/[^A-Za-z0-9]+/","_",$server);
 			$sugar_config_si['setup_site_url'] = str_replace('SERVER', $server, $sugar_config_si['setup_site_url']);
 			$config = '<?php $sugar_config_si = '.var_export($sugar_config_si, true).";";
-			file_put_contents($ipath."/config_si.php", $config);
+			file_put_contents($path."/config_si.php", $config);
 		}
 	}
 	

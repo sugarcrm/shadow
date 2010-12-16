@@ -21,21 +21,24 @@ class SugarShadow{
 		$this->server = $server;
 		$this->key = md5($server);
 	}
+
+	function configCacheDir($ipath, $from)
+	{
+		$paths = array("", "layout", "csv", "import", "pdf", "feeds", "images", "upload", "xml");
+		foreach($paths as $path) {
+			mkdir("$ipath/cache/$path", 0755, true);
+			copy("$from/cache/index.html", "$ipath/cache/$path/index.html");
+		}
+	}
 	
 	/**
 	 * Creates all required instance directories
 	 * Enter description here ...
 	 * @param unknown_type $path
 	 */
-	protected function createInstance($path){
-		
-		mkdir($path . '/cache/images', 0775, true);
-		mkdir($path . '/cache/import', 0775, true);
-		mkdir($path . '/cache/layout', 0775, true);
-		mkdir($path . '/cache/pdf', 0775, true);
-		mkdir($path . '/cache/upload', 0775, true);
-		mkdir($path . '/cache/xml', 0775, true);
-		mkdir($path . '/cache/smarty/templates_c', 0775, true);
+	protected function createInstance($path)
+	{
+		$this->configCacheDir($path, dirname(__FILE__));
 		mkdir($path . '/custom', 0775, true);
 	}
 	
