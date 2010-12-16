@@ -702,7 +702,7 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, ch
 	
 	if(options & STREAM_USE_GLOB_DIR_OPEN) {
 		/* not dealing with globs yet */
-		if(SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening glob: %s\n", path);	
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening glob: %s\n", path);	
 		return plain_ops->dir_opener(wrapper, path, mode, options, opened_path, context STREAMS_CC TSRMLS_CC);
 	} 
 	if(is_instance_only(path TSRMLS_CC)) {
@@ -714,10 +714,10 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, ch
 		return instdir;
 	}
 	instname = template_to_instance(path, 1 TSRMLS_CC);
-	if(SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opendir: %s (%s)\n", path, instname);	
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opendir: %s (%s)\n", path, instname);	
 	if(!instname) {
 		/* we don't have instance dir, don't bother with merging */
-		if(SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening template: %s\n", path);	
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening template: %s\n", path);	
 		return plain_ops->dir_opener(wrapper, path, mode, options, opened_path, context STREAMS_CC TSRMLS_CC);
 	}
 	
@@ -725,7 +725,7 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, ch
 	efree(instname);
 	if(!instdir) {
 		/* instance dir failed, return just template one */
-		if(SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening template w/o instance: %s\n", path);	
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening template w/o instance: %s\n", path);	
 		return plain_ops->dir_opener(wrapper, path, mode, options, opened_path, context STREAMS_CC TSRMLS_CC);
 	}
 	tempdir = plain_ops->dir_opener(wrapper, path, mode, options&(~REPORT_ERRORS), opened_path, context STREAMS_CC TSRMLS_CC);
