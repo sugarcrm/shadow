@@ -35,6 +35,7 @@ class SugarShadow{
 		mkdir($path . '/cache/pdf', 0775, true);
 		mkdir($path . '/cache/upload', 0775, true);
 		mkdir($path . '/cache/xml', 0775, true);
+		mkdir($path . '/cache/smarty/templates_c', 0775, true);
 		mkdir($path . '/custom', 0775, true);
 	}
 	
@@ -85,7 +86,7 @@ class SugarShadow{
 			if(!file_exists($info['path'])){
 				$shadow->createInstance($info['path']);
 			}
-			shadow(dirname(__FILE__),$info['path'], array('cache'));
+			shadow(dirname(__FILE__),$info['path'], array('cache', 'config.php'));
 		}
 		
 		

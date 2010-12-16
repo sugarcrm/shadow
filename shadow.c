@@ -569,7 +569,9 @@ static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filen
 {
 	int flags; 
 	php_stream *res;
-	if(SHADOW_G(debug) & SHADOW_DEBUG_OPEN)  fprintf(stderr, "Opening: %s %s\n", filename, mode);
+	if(SHADOW_ENABLED()) {
+		if(SHADOW_G(debug) & SHADOW_DEBUG_OPEN)  fprintf(stderr, "Opening: %s %s\n", filename, mode);
+	}
 	if(php_stream_parse_fopen_modes(mode, &flags) == SUCCESS) {
 		if(flags & O_WRONLY) {
 			// writing
@@ -604,7 +606,9 @@ static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filen
 static int shadow_stat(php_stream_wrapper *wrapper, char *url, int flags, php_stream_statbuf *ssb, php_stream_context *context TSRMLS_DC)
 {
 	char *instname = template_to_instance(url, 1 TSRMLS_CC);
-	if(SHADOW_G(debug) & SHADOW_DEBUG_STAT)  fprintf(stderr, "Stat: %s (%s) %d\n", url, instname, flags);	
+	if(SHADOW_ENABLED()) {
+		if(SHADOW_G(debug) & SHADOW_DEBUG_STAT)  fprintf(stderr, "Stat: %s (%s) %d\n", url, instname, flags);	
+	}
 	if(instname) {
 		int res = plain_ops->url_stat(wrapper, instname, flags, ssb, context TSRMLS_CC);
 		efree(instname);
@@ -617,7 +621,7 @@ static int shadow_unlink(php_stream_wrapper *wrapper, char *url, int options, ph
 {
 	char *instname = template_to_instance(url, 0 TSRMLS_CC);
 	int res;
-	if(SHADOW_G(debug) & SHADOW_DEBUG_UNLINK) fprintf(stderr, "Unlink: %s (%s) %d\n", url, instname, options);	
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_UNLINK) fprintf(stderr, "Unlink: %s (%s) %d\n", url, instname, options);	
 	if(instname) {
 		url = instname;
 	}
@@ -633,7 +637,7 @@ static int shadow_rename(php_stream_wrapper *wrapper, char *url_from, char *url_
 	char *fromname = template_to_instance(url_from, 1 TSRMLS_CC);
 	char *toname = template_to_instance(url_to, 0 TSRMLS_CC);
 	int res;
-	if(SHADOW_G(debug) & SHADOW_DEBUG_RENAME) fprintf(stderr, "Rename: %s(%s) -> %s(%s) %d\n", url_from, fromname, url_to, toname, options);	
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_RENAME) fprintf(stderr, "Rename: %s(%s) -> %s(%s) %d\n", url_from, fromname, url_to, toname, options);	
 	if(fromname) {
 		url_from = fromname;
 	}
@@ -641,7 +645,7 @@ static int shadow_rename(php_stream_wrapper *wrapper, char *url_from, char *url_
 		url_to = toname;
 	}
 	res = plain_ops->rename(wrapper, url_from, url_to, options, context TSRMLS_CC);
-	if(!res && (SHADOW_G(debug) & SHADOW_DEBUG_FAIL)) {
+	if(!res && SHADOW_ENABLED() && (SHADOW_G(debug) & SHADOW_DEBUG_FAIL)) {
 		fprintf(stderr, "Rename FAIL: %s -> %s  [%d]\n", url_from, url_to, errno);	
 	}
 	if(fromname) {
@@ -662,9 +666,9 @@ static int shadow_mkdir(php_stream_wrapper *wrapper, char *dir, int mode, int op
 		/* always use recursive to create unexisting paths */
 		options |= PHP_STREAM_MKDIR_RECURSIVE;
 	}
-	if(SHADOW_G(debug) & SHADOW_DEBUG_MKDIR)  fprintf(stderr, "Mkdir: %s (%s) %d %d\n", dir, instname, mode, options);	
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_MKDIR)  fprintf(stderr, "Mkdir: %s (%s) %d %d\n", dir, instname, mode, options);	
 	res = plain_ops->stream_mkdir(wrapper, dir, mode, options, context TSRMLS_CC);
-	if(!res && (SHADOW_G(debug) & SHADOW_DEBUG_FAIL)) {
+	if(SHADOW_ENABLED() && !res && (SHADOW_G(debug) & SHADOW_DEBUG_FAIL)) {
 		fprintf(stderr, "Mkdir FAIL: %s %d %d [%d]\n", dir, mode, options, errno);	
 	}
 	if(instname) {
@@ -677,7 +681,7 @@ static int shadow_rmdir(php_stream_wrapper *wrapper, char *url, int options, php
 {
 	char *instname = template_to_instance(url, 0 TSRMLS_CC);
 	int res;
-	if(SHADOW_G(debug) & SHADOW_DEBUG_MKDIR) fprintf(stderr, "Rmdir: %s (%s) %d\n", url, instname, options);	
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_MKDIR) fprintf(stderr, "Rmdir: %s (%s) %d\n", url, instname, options);	
 	if(instname) {
 		url = instname;
 	}
@@ -840,7 +844,7 @@ static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS)
 	}
 	instname = template_to_instance(filename, 0 TSRMLS_CC);
 	
-	if(SHADOW_G(debug) & SHADOW_DEBUG_TOUCH) fprintf(stderr, "Touching %s (%s)\n", filename, instname);
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_TOUCH) fprintf(stderr, "Touching %s (%s)\n", filename, instname);
 	if(instname) {
 		zval **name;
 		zval *old_name, *new_name;
@@ -881,7 +885,7 @@ static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS)
 	}
 	instname = template_to_instance(filename, 1 TSRMLS_CC);
 	
-	if(SHADOW_G(debug) & SHADOW_DEBUG_CHMOD) fprintf(stderr, "Chmod %s (%s) %ld\n", filename, instname, mode);
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_CHMOD) fprintf(stderr, "Chmod %s (%s) %ld\n", filename, instname, mode);
 	
 	if(instname) {
 		zval **name;
