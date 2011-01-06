@@ -22,7 +22,7 @@ void shadow_cache_set_id(const char *template, const char *instance TSRMLS_DC)
 	int namelen;
 	uint *psegment;
 
-	namelen = zend_spprintf(&segname, 0, "0\x9%s\x9%s", template, instance);
+	namelen = spprintf(&segname, 0, "0\x9%s\x9%s", template, instance);
 	if(zend_hash_find(&SHADOW_G(cache), segname, namelen+1, (void **)&psegment) != SUCCESS) {
 		uint segment;
 		shadow_cache_check_full(TSRMLS_C);
@@ -37,7 +37,7 @@ void shadow_cache_set_id(const char *template, const char *instance TSRMLS_DC)
 
 int shadow_cache_segmented_name(char **outname, const char *name TSRMLS_DC)
 {
-	return zend_spprintf(outname, 0, "%d\x9%s", SHADOW_G(segment_id), name);
+	return spprintf(outname, 0, "%d\x9%s", SHADOW_G(segment_id), name);
 }
 
 int shadow_cache_get(const char *name, char **entry TSRMLS_DC)

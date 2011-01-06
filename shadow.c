@@ -29,7 +29,7 @@
 #include "php_streams.h"
 #include <fcntl.h>
 #include "shadow_cache.h"
-#include "signal.h"
+#include <signal.h>
 
 ZEND_DECLARE_MODULE_GLOBALS(shadow)
 
@@ -200,9 +200,10 @@ PHP_MINIT_FUNCTION(shadow)
 	shadow_wrapper_ops.stream_rmdir = shadow_rmdir;
 	shadow_wrapper_ops.dir_opener = shadow_dir_opener;
 	shadow_wrapper_ops.label = "shadow";
+#ifdef DEBUG_CRASH
 	signal(SIGBUS, segv_handler);
 	signal(SIGSEGV, segv_handler);
-
+#endif
 /*	if(SHADOW_G(enabled)) {
 		old_resolve_path = zend_resolve_path;
 		zend_resolve_path = shadow_resolve_path;
