@@ -517,8 +517,7 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 	fnamelen = strlen(realpath);
 
 	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), filename, fnamelen)) {
-		// FIXME: disable caching for now, it doesn't work properly
-		if(0 && check_exists && shadow_cache_get(filename, &newname) == SUCCESS) {
+		if(check_exists && shadow_cache_get(filename, &newname) == SUCCESS) {
 			if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK)	fprintf(stderr, "Path check from cache: %s => %s\n", filename, newname);
 			return newname;
 		}
