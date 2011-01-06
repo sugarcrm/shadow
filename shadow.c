@@ -31,6 +31,8 @@
 #include "shadow_cache.h"
 #include <signal.h>
 
+#define DEBUG_CRASH 1
+
 ZEND_DECLARE_MODULE_GLOBALS(shadow)
 
 PHP_FUNCTION(shadow);
