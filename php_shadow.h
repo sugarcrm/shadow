@@ -61,6 +61,7 @@ ZEND_BEGIN_MODULE_GLOBALS(shadow)
 	zend_bool enabled;
 	long mkdir_mask;
 	long debug;
+	unsigned long cache_size;
 	/* runtime data */
 	char *template;
 	char *instance;
@@ -70,6 +71,7 @@ ZEND_BEGIN_MODULE_GLOBALS(shadow)
 	int instance_only_count;
 	char *curdir;
 	HashTable cache;
+	uint segment_id;
 ZEND_END_MODULE_GLOBALS(shadow)
 
 #ifdef ZTS

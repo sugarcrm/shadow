@@ -29,6 +29,7 @@
 #include "php_streams.h"
 #include <fcntl.h>
 #include "shadow_cache.h"
+#include "signal.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(shadow)
 
@@ -48,9 +49,9 @@ static int shadow_dirstream_close(php_stream *stream, int close_handle TSRMLS_DC
 static int shadow_dirstream_rewind(php_stream *stream, off_t offset, int whence, off_t *newoffs TSRMLS_DC);
 
 static php_stream_ops shadow_dirstream_ops = {
-	NULL, 
+	NULL,
 	shadow_dirstream_read,
-	shadow_dirstream_close, 
+	shadow_dirstream_close,
 	NULL,
 	"shadow dir",
 	shadow_dirstream_rewind,
@@ -66,7 +67,7 @@ static void (*orig_chmod)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_chdir)(INTERNAL_FUNCTION_PARAMETERS);
 
 static char *shadow_resolve_path(const char *filename, int filename_len TSRMLS_DC);
-static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filename, char *mode, 
+static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filename, char *mode,
 	int options, char **opened_path, php_stream_context *context STREAMS_DC TSRMLS_DC);
 static int shadow_stat(php_stream_wrapper *wrapper, char *url, int flags, php_stream_statbuf *ssb,
 	php_stream_context *context TSRMLS_DC);
@@ -90,10 +91,10 @@ ZEND_END_ARG_INFO()
  *
  */
 const zend_function_entry shadow_functions[] = {
-	PHP_FE(shadow,	arginfo_shadow)	
-	PHP_FE(shadow_get_config,	NULL)	
-	PHP_FE(shadow_clear_cache,	NULL)	
-	{NULL, NULL, NULL}	
+	PHP_FE(shadow,	arginfo_shadow)
+	PHP_FE(shadow_get_config,	NULL)
+	PHP_FE(shadow_clear_cache,	NULL)
+	{NULL, NULL, NULL}
 };
 /* }}} */
 
@@ -102,7 +103,7 @@ const zend_function_entry shadow_functions[] = {
 static PHP_GINIT_FUNCTION(shadow)
 {
 	memset(shadow_globals, 0, sizeof(zend_shadow_globals));
-	zend_hash_init(&shadow_globals->cache, 10, NULL, NULL, 1); // persistent! 
+	zend_hash_init(&shadow_globals->cache, 10, NULL, NULL, 1); // persistent!
 }
 /* }}} */
 
@@ -110,7 +111,7 @@ static PHP_GINIT_FUNCTION(shadow)
  */
 static PHP_GSHUTDOWN_FUNCTION(shadow)
 {
-	zend_hash_destroy(&shadow_globals->cache); 
+	zend_hash_destroy(&shadow_globals->cache);
 }
 /* }}} */
 
@@ -122,10 +123,10 @@ zend_module_entry shadow_module_entry = {
 	shadow_functions,
 	PHP_MINIT(shadow),
 	PHP_MSHUTDOWN(shadow),
-	PHP_RINIT(shadow),		
-	PHP_RSHUTDOWN(shadow),	
+	PHP_RINIT(shadow),
+	PHP_RSHUTDOWN(shadow),
 	PHP_MINFO(shadow),
-	"0.1", 
+	"0.1",
     PHP_MODULE_GLOBALS(shadow),
     PHP_GINIT(shadow),
     PHP_GSHUTDOWN(shadow),
@@ -144,6 +145,7 @@ PHP_INI_BEGIN()
     STD_PHP_INI_ENTRY("shadow.enabled",      "1", PHP_INI_ALL, OnUpdateBool, enabled, zend_shadow_globals, shadow_globals)
     STD_PHP_INI_ENTRY("shadow.mkdir_mask",      "0755", PHP_INI_ALL, OnUpdateLong, mkdir_mask, zend_shadow_globals, shadow_globals)
     STD_PHP_INI_ENTRY("shadow.debug",      "0", PHP_INI_ALL, OnUpdateLong, debug, zend_shadow_globals, shadow_globals)
+    STD_PHP_INI_ENTRY("shadow.cache_size",      "10000", PHP_INI_ALL, OnUpdateLong, cache_size, zend_shadow_globals, shadow_globals)
 PHP_INI_END()
 /* }}} */
 
@@ -155,17 +157,24 @@ PHP_INI_END()
         orig_##func = orig->internal_function.handler; \
         orig->internal_function.handler = shadow_##func; \
 	}
-	
+
 #define SHADOW_ENABLED() (SHADOW_G(enabled) != 0 && SHADOW_G(instance) != NULL && SHADOW_G(template) != NULL)
+
+void segv_handler()
+{
+	fprintf(stderr, "CRASH: %d\n", getpid());
+	fflush(stderr);
+	pause();
+}
 
 /* {{{ PHP_MINIT_FUNCTION
  */
 PHP_MINIT_FUNCTION(shadow)
 {
 	zend_function *orig;
-	
+
 	REGISTER_INI_ENTRIES();
-	
+
 	SHADOW_CONSTANT(SHADOW_DEBUG_FULLPATH);
 	SHADOW_CONSTANT(SHADOW_DEBUG_OPEN);
 	SHADOW_CONSTANT(SHADOW_DEBUG_STAT);
@@ -179,7 +188,7 @@ PHP_MINIT_FUNCTION(shadow)
 	SHADOW_CONSTANT(SHADOW_DEBUG_FAIL);
 	SHADOW_CONSTANT(SHADOW_DEBUG_TOUCH);
 	SHADOW_CONSTANT(SHADOW_DEBUG_CHMOD);
-	
+
 	plain_ops = php_plain_files_wrapper.wops;
 
 	memcpy(&shadow_wrapper_ops, plain_ops, sizeof(shadow_wrapper_ops));
@@ -191,16 +200,18 @@ PHP_MINIT_FUNCTION(shadow)
 	shadow_wrapper_ops.stream_rmdir = shadow_rmdir;
 	shadow_wrapper_ops.dir_opener = shadow_dir_opener;
 	shadow_wrapper_ops.label = "shadow";
-	
+	signal(SIGBUS, segv_handler);
+	signal(SIGSEGV, segv_handler);
+
 /*	if(SHADOW_G(enabled)) {
 		old_resolve_path = zend_resolve_path;
 		zend_resolve_path = shadow_resolve_path;
 	}
-*/	
+*/
 	SHADOW_OVERRIDE(touch);
 	SHADOW_OVERRIDE(chmod);
 	SHADOW_OVERRIDE(chdir);
-	
+
 	return SUCCESS;
 }
 /* }}} */
@@ -226,6 +237,7 @@ PHP_RINIT_FUNCTION(shadow)
 	SHADOW_G(template) = NULL;
 	SHADOW_G(instance) = NULL;
 	SHADOW_G(curdir) = NULL;
+	SHADOW_G(segment_id) = 0;
 	return SUCCESS;
 }
 /* }}} */
@@ -288,18 +300,18 @@ PHP_FUNCTION(shadow)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|h", &temp, &temp_len, &inst, &inst_len, &instance_only) == FAILURE) {
 		return;
 	}
-	
+
 	if(!SHADOW_G(enabled)) {
 		RETURN_FALSE;
 	}
-	
+
 	shadow_free_data();
 	php_clear_stat_cache(0, NULL, 0 TSRMLS_CC);
 	if(temp_len == 0 || inst_len == 0) {
 		/* empty arg means turn it off */
 		RETURN_TRUE;
 	}
-	
+
 	SHADOW_G(template) = zend_resolve_path(temp, temp_len);
 	if(!SHADOW_G(template)) {
 		RETURN_FALSE;
@@ -313,12 +325,12 @@ PHP_FUNCTION(shadow)
 	}
 
 	SHADOW_G(instance_len) = strlen(SHADOW_G(instance));
-	
+	shadow_cache_set_id(SHADOW_G(template), SHADOW_G(instance));
 	if(instance_only) {
 		int i = 0;
 		HashPosition pos;
 		zval **item;
-		
+
 		SHADOW_G(instance_only_count) = zend_hash_num_elements(instance_only);
 		SHADOW_G(instance_only) = ecalloc(SHADOW_G(instance_only_count), sizeof(char *));
 		zend_hash_internal_pointer_reset_ex(instance_only, &pos);
@@ -339,15 +351,15 @@ PHP_FUNCTION(shadow_get_config)
 {
 	zval *instance_only;
 	int i;
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
-	
+
 	if(!SHADOW_G(enabled)) {
 		RETURN_FALSE;
 	}
-	
+
 	array_init_size(return_value, 3);
 	add_assoc_string(return_value, "template", SHADOW_G(template)?SHADOW_G(template):"", 1);
 	add_assoc_string(return_value, "instance", SHADOW_G(instance)?SHADOW_G(instance):"", 1);
@@ -366,15 +378,15 @@ PHP_FUNCTION(shadow_clear_cache)
 {
 	zval *instance_only;
 	int i;
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
-	
+
 	if(!SHADOW_G(enabled)) {
 		RETURN_FALSE;
 	}
-	
+
 	shadow_cache_clean(TSRMLS_C);
 	if(SHADOW_G(curdir)) {
 		free(SHADOW_G(curdir));
@@ -399,11 +411,11 @@ static int instance_only_subdir(const char *dir TSRMLS_DC)
 			return 1;
 		}
 	}
-	
+
 	return 0;
 }
 
-/* 
+/*
  * Check if the path is inside "instance only" area
 */
 static int is_instance_only(const char *filename TSRMLS_DC)
@@ -423,9 +435,9 @@ static int is_instance_only(const char *filename TSRMLS_DC)
 		}
 		filename = realpath;
 		fnamelen = strlen(realpath);
-	}	
-	
-	if(SHADOW_G(template_len)+1 <= fnamelen && 
+	}
+
+	if(SHADOW_G(template_len)+1 <= fnamelen &&
 		memcmp(SHADOW_G(template), filename, SHADOW_G(template_len)) == 0 &&
 		IS_SLASH(filename[SHADOW_G(template_len)])
 	) {
@@ -435,11 +447,11 @@ static int is_instance_only(const char *filename TSRMLS_DC)
 		}
 		return result;
 	}
-	
-	if(SHADOW_G(instance_len)+1 <= fnamelen && 
+
+	if(SHADOW_G(instance_len)+1 <= fnamelen &&
 		memcmp(SHADOW_G(instance), filename, SHADOW_G(instance_len)) == 0 &&
 		IS_SLASH(filename[SHADOW_G(instance_len)])) {
-		result = instance_only_subdir(filename+SHADOW_G(instance_len)+1 TSRMLS_CC);	
+		result = instance_only_subdir(filename+SHADOW_G(instance_len)+1 TSRMLS_CC);
 		if(realpath) {
 			efree(realpath);
 		}
@@ -453,7 +465,7 @@ static int is_instance_only(const char *filename TSRMLS_DC)
  */
 static inline int is_subdir_of(const char *dir, int dirlen, const char *path, int pathlen)
 {
-	if(dirlen+1 < pathlen && 
+	if(dirlen+1 < pathlen &&
 		memcmp(dir, path, dirlen) == 0 &&
 		IS_SLASH(path[dirlen])) {
 			return 1;
@@ -461,14 +473,14 @@ static inline int is_subdir_of(const char *dir, int dirlen, const char *path, in
 	return 0;
 }
 
-static char *get_full_path(const char *filename TSRMLS_CC)
+static char *get_full_path(const char *filename TSRMLS_DC)
 {
 	cwd_state new_state;
-	
+
 	if(!SHADOW_G(curdir)) {
 		SHADOW_G(curdir) = getcwd(NULL, 0);
 	}
-	
+
 	new_state.cwd = strdup(SHADOW_G(curdir));
 	new_state.cwd_length = strlen(SHADOW_G(curdir));
 	if (virtual_file_ex(&new_state, filename, NULL, CWD_FILEPATH)) {
@@ -478,7 +490,7 @@ static char *get_full_path(const char *filename TSRMLS_CC)
 	return estrndup(new_state.cwd, new_state.cwd_length);
 }
 
-/* 
+/*
 Returns new instance path or NULL if template path is OK
 filename is relative to template root
 */
@@ -500,10 +512,10 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 	}
 	filename = realpath;
 	fnamelen = strlen(realpath);
-	
+
 	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), filename, fnamelen)) {
 		// FIXME: disable caching for now, it doesn't work properly
-		if(0 && check_exists && shadow_cache_get(filename, fnamelen, &newname) == SUCCESS) {
+		if(0 && check_exists && shadow_cache_get(filename, &newname) == SUCCESS) {
 			if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK)	fprintf(stderr, "Path check from cache: %s => %s\n", filename, newname);
 			return newname;
 		}
@@ -517,7 +529,7 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 			}
 			/* drop down to return */
 		}
-		shadow_cache_put(filename, fnamelen, newname);
+		shadow_cache_put(filename, newname);
 	} else if(is_subdir_of(SHADOW_G(instance), SHADOW_G(instance_len), filename, fnamelen)) {
 		if(check_exists) {
 			/* starts with instance, may want to check template too */
@@ -534,7 +546,7 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 			realpath = NULL;
 		}
 	}
-	
+
 	if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK)	fprintf(stderr, "Path check: %s => %s\n", filename, newname);
 	if(realpath) {
 		efree(realpath);
@@ -551,7 +563,7 @@ static void ensure_dir_exists(char *pathname, php_stream_wrapper *wrapper, php_s
 	dir_len = zend_dirname(pathname, strlen(pathname));
 	if(VCWD_ACCESS(pathname, F_OK) != 0) {
 		/* does not exist */
-		if(SHADOW_G(debug) & SHADOW_DEBUG_ENSURE)	 fprintf(stderr, "Creating: %s %ld\n", pathname, SHADOW_G(mkdir_mask));	
+		if(SHADOW_G(debug) & SHADOW_DEBUG_ENSURE)	 fprintf(stderr, "Creating: %s %ld\n", pathname, SHADOW_G(mkdir_mask));
 		plain_ops->stream_mkdir(wrapper, pathname, SHADOW_G(mkdir_mask), PHP_STREAM_MKDIR_RECURSIVE|REPORT_ERRORS, context TSRMLS_CC);
 	}
 	pathname[dir_len] = '/'; /* restore full path */
@@ -560,14 +572,14 @@ static void ensure_dir_exists(char *pathname, php_stream_wrapper *wrapper, php_s
 static char *shadow_resolve_path(const char *filename, int filename_len TSRMLS_DC)
 {
 	char *result = old_resolve_path(filename, filename_len TSRMLS_CC);
-	if(SHADOW_G(debug) & SHADOW_DEBUG_RESOLVE) fprintf(stderr, "Resolve: %s -> %s\n", filename, result);	
+	if(SHADOW_G(debug) & SHADOW_DEBUG_RESOLVE) fprintf(stderr, "Resolve: %s -> %s\n", filename, result);
 	return result;
 }
 
-static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filename, char *mode, 
+static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filename, char *mode,
 	int options, char **opened_path, php_stream_context *context STREAMS_DC TSRMLS_DC)
 {
-	int flags; 
+	int flags;
 	php_stream *res;
 	if(SHADOW_ENABLED()) {
 		if(SHADOW_G(debug) & SHADOW_DEBUG_OPEN)  fprintf(stderr, "Opening: %s %s\n", filename, mode);
@@ -581,7 +593,7 @@ static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filen
 				ensure_dir_exists(instname, wrapper, context TSRMLS_CC);
 				res = plain_ops->stream_opener(wrapper, instname, mode, options|STREAM_ASSUME_REALPATH, opened_path, context STREAMS_CC TSRMLS_CC);
 				if(!res && (SHADOW_G(debug) & SHADOW_DEBUG_FAIL)) {
-					fprintf(stderr, "Open FAIL: %s %s [%d]\n", instname, mode, errno);	
+					fprintf(stderr, "Open FAIL: %s %s [%d]\n", instname, mode, errno);
 				}
 				efree(instname);
 				return res;
@@ -593,7 +605,7 @@ static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filen
 				if(SHADOW_G(debug) & SHADOW_DEBUG_OPEN) fprintf(stderr, "Opening instead: %s %s\n", instname, mode);
 		 		res = plain_ops->stream_opener(wrapper, instname, mode, options|STREAM_ASSUME_REALPATH, opened_path, context STREAMS_CC TSRMLS_CC);
 				if(!res && (SHADOW_G(debug) & SHADOW_DEBUG_FAIL)) {
-					fprintf(stderr, "Open FAIL: %s %s [%d]\n", instname, mode, errno);	
+					fprintf(stderr, "Open FAIL: %s %s [%d]\n", instname, mode, errno);
 				}
 				efree(instname);
 				return res;
@@ -607,11 +619,11 @@ static int shadow_stat(php_stream_wrapper *wrapper, char *url, int flags, php_st
 {
 	char *instname = template_to_instance(url, 1 TSRMLS_CC);
 	if(SHADOW_ENABLED()) {
-		if(SHADOW_G(debug) & SHADOW_DEBUG_STAT)  fprintf(stderr, "Stat: %s (%s) %d\n", url, instname, flags);	
+		if(SHADOW_G(debug) & SHADOW_DEBUG_STAT)  fprintf(stderr, "Stat: %s (%s) %d\n", url, instname, flags);
 	}
 	if(instname) {
 		int res = plain_ops->url_stat(wrapper, instname, flags, ssb, context TSRMLS_CC);
-		if(SHADOW_G(debug) & SHADOW_DEBUG_STAT)  fprintf(stderr, "Stat res: %d\n", res);	
+		if(SHADOW_G(debug) & SHADOW_DEBUG_STAT)  fprintf(stderr, "Stat res: %d\n", res);
 		efree(instname);
 		return res;
 	}
@@ -622,7 +634,7 @@ static int shadow_unlink(php_stream_wrapper *wrapper, char *url, int options, ph
 {
 	char *instname = template_to_instance(url, 0 TSRMLS_CC);
 	int res;
-	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_UNLINK) fprintf(stderr, "Unlink: %s (%s) %d\n", url, instname, options);	
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_UNLINK) fprintf(stderr, "Unlink: %s (%s) %d\n", url, instname, options);
 	if(instname) {
 		url = instname;
 	}
@@ -638,7 +650,7 @@ static int shadow_rename(php_stream_wrapper *wrapper, char *url_from, char *url_
 	char *fromname = template_to_instance(url_from, 1 TSRMLS_CC);
 	char *toname = template_to_instance(url_to, 0 TSRMLS_CC);
 	int res;
-	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_RENAME) fprintf(stderr, "Rename: %s(%s) -> %s(%s) %d\n", url_from, fromname, url_to, toname, options);	
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_RENAME) fprintf(stderr, "Rename: %s(%s) -> %s(%s) %d\n", url_from, fromname, url_to, toname, options);
 	if(fromname) {
 		url_from = fromname;
 	}
@@ -647,7 +659,7 @@ static int shadow_rename(php_stream_wrapper *wrapper, char *url_from, char *url_
 	}
 	res = plain_ops->rename(wrapper, url_from, url_to, options, context TSRMLS_CC);
 	if(!res && SHADOW_ENABLED() && (SHADOW_G(debug) & SHADOW_DEBUG_FAIL)) {
-		fprintf(stderr, "Rename FAIL: %s -> %s  [%d]\n", url_from, url_to, errno);	
+		fprintf(stderr, "Rename FAIL: %s -> %s  [%d]\n", url_from, url_to, errno);
 	}
 	if(fromname) {
 		efree(fromname);
@@ -667,10 +679,10 @@ static int shadow_mkdir(php_stream_wrapper *wrapper, char *dir, int mode, int op
 		/* always use recursive to create unexisting paths */
 		options |= PHP_STREAM_MKDIR_RECURSIVE;
 	}
-	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_MKDIR)  fprintf(stderr, "Mkdir: %s (%s) %d %d\n", dir, instname, mode, options);	
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_MKDIR)  fprintf(stderr, "Mkdir: %s (%s) %d %d\n", dir, instname, mode, options);
 	res = plain_ops->stream_mkdir(wrapper, dir, mode, options, context TSRMLS_CC);
 	if(SHADOW_ENABLED() && !res && (SHADOW_G(debug) & SHADOW_DEBUG_FAIL)) {
-		fprintf(stderr, "Mkdir FAIL: %s %d %d [%d]\n", dir, mode, options, errno);	
+		fprintf(stderr, "Mkdir FAIL: %s %d %d [%d]\n", dir, mode, options, errno);
 	}
 	if(instname) {
 		efree(instname);
@@ -682,7 +694,7 @@ static int shadow_rmdir(php_stream_wrapper *wrapper, char *url, int options, php
 {
 	char *instname = template_to_instance(url, 0 TSRMLS_CC);
 	int res;
-	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_MKDIR) fprintf(stderr, "Rmdir: %s (%s) %d\n", url, instname, options);	
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_MKDIR) fprintf(stderr, "Rmdir: %s (%s) %d\n", url, instname, options);
 	if(instname) {
 		url = instname;
 	}
@@ -700,33 +712,33 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, ch
 	HashTable *mergedata;
 	php_stream_dirent entry;
 	void *dummy = (void *)1;
-	
+
 	if(options & STREAM_USE_GLOB_DIR_OPEN) {
 		/* not dealing with globs yet */
-		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening glob: %s\n", path);	
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening glob: %s\n", path);
 		return plain_ops->dir_opener(wrapper, path, mode, options, opened_path, context STREAMS_CC TSRMLS_CC);
-	} 
+	}
 	if(is_instance_only(path TSRMLS_CC)) {
 		/* if it's instance-only dir, we won't merge in any case */
 		instname = template_to_instance(path, 0 TSRMLS_CC);
-		if(SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening instance only: %s\n", path);	
+		if(SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening instance only: %s\n", path);
 		instdir = plain_ops->dir_opener(wrapper, instname, mode, options, opened_path, context STREAMS_CC TSRMLS_CC);
 		efree(instname);
 		return instdir;
 	}
 	instname = template_to_instance(path, 1 TSRMLS_CC);
-	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opendir: %s (%s)\n", path, instname);	
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opendir: %s (%s)\n", path, instname);
 	if(!instname) {
 		/* we don't have instance dir, don't bother with merging */
-		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening template: %s\n", path);	
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening template: %s\n", path);
 		return plain_ops->dir_opener(wrapper, path, mode, options, opened_path, context STREAMS_CC TSRMLS_CC);
 	}
-	
+
 	instdir = plain_ops->dir_opener(wrapper, instname, mode, options&(~REPORT_ERRORS), opened_path, context STREAMS_CC TSRMLS_CC);
 	efree(instname);
 	if(!instdir) {
 		/* instance dir failed, return just template one */
-		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening template w/o instance: %s\n", path);	
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening template w/o instance: %s\n", path);
 		return plain_ops->dir_opener(wrapper, path, mode, options, opened_path, context STREAMS_CC TSRMLS_CC);
 	}
 	tempdir = plain_ops->dir_opener(wrapper, path, mode, options&(~REPORT_ERRORS), opened_path, context STREAMS_CC TSRMLS_CC);
@@ -738,7 +750,7 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, ch
 	/* TODO: figure out why we need these flags */
 	instdir->flags |= PHP_STREAM_FLAG_NO_BUFFER;
 	tempdir->flags |= PHP_STREAM_FLAG_NO_BUFFER;
-	
+
 	ALLOC_HASHTABLE(mergedata);
 	zend_hash_init(mergedata, 10, NULL, NULL, 0);
 	while(php_stream_readdir(tempdir, &entry)) {
@@ -750,7 +762,7 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, ch
 	zend_hash_internal_pointer_reset(mergedata);
 	php_stream_free(instdir, PHP_STREAM_FREE_CLOSE);
 	php_stream_free(tempdir, PHP_STREAM_FREE_CLOSE);
-	
+
 	/* give back the data as stream */
 	mergestream = php_stream_alloc(&shadow_dirstream_ops, mergedata, 0, mode);
 	if(!mergestream) {
@@ -768,7 +780,7 @@ static size_t shadow_dirstream_read(php_stream *stream, char *buf, size_t count 
 	char *name = NULL;
 	int namelen = 0;
 	ulong num;
-	
+
 	/* avoid problems if someone mis-uses the stream */
 	if (count != sizeof(php_stream_dirent))
 		return 0;
@@ -780,7 +792,7 @@ static size_t shadow_dirstream_read(php_stream *stream, char *buf, size_t count 
 		return 0;
 	}
 	zend_hash_move_forward(mergedata);
-	
+
 	PHP_STRLCPY(ent->d_name, name, sizeof(ent->d_name), namelen);
 	return sizeof(php_stream_dirent);
 }
@@ -809,20 +821,20 @@ static zval **shadow_get_arg(int arg TSRMLS_DC)
 	if(!EG(current_execute_data)) {
 		return NULL;
 	}
-	
+
 	p = EG(current_execute_data)->function_state.arguments;
 	if(!p) {
 		return NULL;
 	}
-	
+
 	arg_count = (int)(zend_uintptr_t) *p;
 	if(arg >= arg_count) {
 		return NULL;
 	}
-	
+
 	p -= arg_count;
 	p += arg;
-	
+
 	return (zval **)p;
 }
 
@@ -844,7 +856,7 @@ static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS)
 		return;
 	}
 	instname = template_to_instance(filename, 0 TSRMLS_CC);
-	
+
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_TOUCH) fprintf(stderr, "Touching %s (%s)\n", filename, instname);
 	if(instname) {
 		zval **name;
@@ -885,11 +897,11 @@ static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS)
 		return;
 	}
 	instname = template_to_instance(filename, 1 TSRMLS_CC);
-	
+
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_CHMOD) fprintf(stderr, "Chmod %s (%s) %lo\n", filename, instname, mode);
 	/* Clear cache because PHP caches non-plain-file stats */
 	php_clear_stat_cache(0, NULL, 0 TSRMLS_CC);
-	
+
 	if(instname) {
 		zval **name;
 		zval *old_name, *new_name;
@@ -907,7 +919,7 @@ static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS)
 		zval_ptr_dtor(&new_name);
 		return;
 	}
-	
+
 	orig_chmod(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 }
 
