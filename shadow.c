@@ -29,9 +29,6 @@
 #include "php_streams.h"
 #include <fcntl.h>
 #include "shadow_cache.h"
-#include <signal.h>
-
-#define DEBUG_CRASH 1
 
 ZEND_DECLARE_MODULE_GLOBALS(shadow)
 
@@ -67,6 +64,7 @@ static char *(*old_resolve_path)(const char *filename, int filename_len TSRMLS_D
 static void (*orig_touch)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_chmod)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_chdir)(INTERNAL_FUNCTION_PARAMETERS);
+static void (*orig_fread)(INTERNAL_FUNCTION_PARAMETERS);
 
 static char *shadow_resolve_path(const char *filename, int filename_len TSRMLS_DC);
 static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filename, char *mode,
@@ -82,6 +80,7 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, ch
 static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_chdir(INTERNAL_FUNCTION_PARAMETERS);
+static void shadow_fread(INTERNAL_FUNCTION_PARAMETERS);
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_shadow, 0, 0, 2)
 	ZEND_ARG_INFO(0, template)
@@ -162,13 +161,6 @@ PHP_INI_END()
 
 #define SHADOW_ENABLED() (SHADOW_G(enabled) != 0 && SHADOW_G(instance) != NULL && SHADOW_G(template) != NULL)
 
-void segv_handler()
-{
-	fprintf(stderr, "CRASH: %d\n", getpid());
-	fflush(stderr);
-	pause();
-}
-
 /* {{{ PHP_MINIT_FUNCTION
  */
 PHP_MINIT_FUNCTION(shadow)
@@ -202,10 +194,6 @@ PHP_MINIT_FUNCTION(shadow)
 	shadow_wrapper_ops.stream_rmdir = shadow_rmdir;
 	shadow_wrapper_ops.dir_opener = shadow_dir_opener;
 	shadow_wrapper_ops.label = "shadow";
-#ifdef DEBUG_CRASH
-	signal(SIGBUS, segv_handler);
-	signal(SIGSEGV, segv_handler);
-#endif
 /*	if(SHADOW_G(enabled)) {
 		old_resolve_path = zend_resolve_path;
 		zend_resolve_path = shadow_resolve_path;
@@ -214,6 +202,7 @@ PHP_MINIT_FUNCTION(shadow)
 	SHADOW_OVERRIDE(touch);
 	SHADOW_OVERRIDE(chmod);
 	SHADOW_OVERRIDE(chdir);
+	SHADOW_OVERRIDE(fread);
 
 	return SUCCESS;
 }
@@ -379,9 +368,6 @@ PHP_FUNCTION(shadow_get_config)
    Clear cached data */
 PHP_FUNCTION(shadow_clear_cache)
 {
-	zval *instance_only;
-	int i;
-
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -942,6 +928,44 @@ static void shadow_chdir(INTERNAL_FUNCTION_PARAMETERS)
 	orig_chdir(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 }
 /* TODO: chown */
+
+/* {{{ proto string fread(resource fp, int length)
+   Binary-safe file read */
+static void shadow_fread(INTERNAL_FUNCTION_PARAMETERS)
+{
+	zval *arg1;
+	long len;
+	php_stream *stream;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &arg1, &len) == FAILURE) {
+		RETURN_FALSE;
+	}
+
+	php_stream_from_zval(stream, &arg1);
+	if(stream->wrapper == &shadow_wrapper) {
+		char		*contents	= NULL;
+		int newlen;
+
+		if (len <= 0) {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Length parameter must be greater than 0");
+			RETURN_FALSE;
+		}
+
+		len = php_stream_copy_to_mem(stream, &contents, len, 0);
+		if (contents) {
+			if (len && PG(magic_quotes_runtime)) {
+				contents = php_addslashes(contents, len, &newlen, 1 TSRMLS_CC); /* 1 = free source string */
+				len = newlen;
+			}
+			RETVAL_STRINGL(contents, len, 0);
+		} else {
+			RETVAL_EMPTY_STRING();
+		}
+	} else {
+		orig_fread(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+	}
+}
+/* }}} */
 
 /*
  * Local variables:
