@@ -65,6 +65,7 @@ static void (*orig_touch)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_chmod)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_chdir)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_fread)(INTERNAL_FUNCTION_PARAMETERS);
+static void (*orig_realpath)(INTERNAL_FUNCTION_PARAMETERS);
 
 static char *shadow_resolve_path(const char *filename, int filename_len TSRMLS_DC);
 static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filename, char *mode,
@@ -81,6 +82,7 @@ static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_chdir(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_fread(INTERNAL_FUNCTION_PARAMETERS);
+static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS);
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_shadow, 0, 0, 2)
 	ZEND_ARG_INFO(0, template)
@@ -203,6 +205,7 @@ PHP_MINIT_FUNCTION(shadow)
 	SHADOW_OVERRIDE(chmod);
 	SHADOW_OVERRIDE(chdir);
 	SHADOW_OVERRIDE(fread);
+	SHADOW_OVERRIDE(realpath);
 
 	return SUCCESS;
 }
@@ -966,6 +969,47 @@ static void shadow_fread(INTERNAL_FUNCTION_PARAMETERS)
 	}
 }
 /* }}} */
+
+/* {{{ proto string realpath(string path)
+   Return the resolved path */
+static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS)
+{
+	char *filename;
+	int filename_len;
+	char *instname;
+
+	if(!SHADOW_ENABLED()) {
+		orig_realpath(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		return;
+	}
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &filename, &filename_len) == FAILURE) {
+		return;
+	}
+	instname = template_to_instance(filename, 0 TSRMLS_CC);
+
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_RESOLVE) fprintf(stderr, "Realpath %s (%s)\n", filename, instname);
+
+	if(instname) {
+		zval **name;
+		zval *old_name, *new_name;
+		name = shadow_get_arg(0 TSRMLS_CC);
+		if(!name || !*name) {
+			orig_realpath(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+			return;
+		}
+		old_name = *name;
+		ALLOC_INIT_ZVAL(new_name);
+		ZVAL_STRING(new_name, instname, 0);
+		*name = new_name;
+		orig_realpath(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		*name = old_name;
+		zval_ptr_dtor(&new_name);
+		return;
+	}
+
+	orig_realpath(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+}
 
 /*
  * Local variables:
