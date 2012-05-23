@@ -956,10 +956,12 @@ static void shadow_fread(INTERNAL_FUNCTION_PARAMETERS)
 
 		len = php_stream_copy_to_mem(stream, &contents, len, 0);
 		if (contents) {
+#if ZEND_MODULE_API_NO < 20100525
 			if (len && PG(magic_quotes_runtime)) {
 				contents = php_addslashes(contents, len, &newlen, 1 TSRMLS_CC); /* 1 = free source string */
 				len = newlen;
 			}
+#endif
 			RETVAL_STRINGL(contents, len, 0);
 		} else {
 			RETVAL_EMPTY_STRING();
