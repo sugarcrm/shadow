@@ -29,12 +29,28 @@
 ini_set('memory_limit',-1);
 set_time_limit(0);
 
+function writeLog($message)
+{
+	static $fp;
+	if(empty($fp)) {
+		$fp = fopen($GLOBALS['logpath'], "a+");
+		if(!$fp) {
+			die($mod_strings['ERR_UW_LOG_FILE_UNWRITABLE']);
+		}
+	}
+	$line = date('r').' - '.$message."\n";
+	if(@fwrite($fp, $line) === false) {
+		die($mod_strings['ERR_UW_LOG_FILE_UNWRITABLE']);
+	}
+	fflush($fp);
+}
+
 function upgrade_check_errors($errors)
 {
 	global $logpath;
 	if(count($errors) > 0) {
 		foreach($errors as $error) {
-			logThis("****** SilentUpgrade ERROR: {$error}", $logpath);
+			writeLog("****** SilentUpgrade ERROR: {$error}");
 		}
 		echo "FAILED\n";
 		exit(1);
@@ -53,113 +69,6 @@ function cleanFromCache($sugar_config, $dir)
 	       	}
 	   }
 	}
-}
-
-/**
- * Ensure default permissions are set in config
- * @param array $sugar_config
- */
-function checkConfigForPermissions(&$sugar_config)
-{
-     if(!isset($sugar_config['default_permissions'])) {
-             $sugar_config['default_permissions'] = array (
-                     'dir_mode' => 02770,
-                     'file_mode' => 0660,
-                     'user' => '',
-                     'group' => '',
-             );
-     }
-}
-
-/**
- * Ensure logging is set up in config
- * @param array $sugar_config
- */
-function checkLoggerSettings(&$sugar_config)
-{
-	if(!isset($sugar_config['logger'])){
-	    $sugar_config['logger'] =array (
-			'level'=>'fatal',
-		    'file' =>
-		     array (
-		      'ext' => '.log',
-		      'name' => 'sugarcrm',
-		      'dateFormat' => '%c',
-		      'maxSize' => '10MB',
-		      'maxLogs' => 10,
-		      'suffix' => '%m_%Y',
-		    ),
-		  );
-	 }
-}
-
-/**
- * Ensure resource management settings are set in config
- * @param array $sugar_config
- */
-function checkResourceSettings(&$sugar_config)
-{
-	if(!isset($sugar_config['resource_management'])){
-	  $sugar_config['resource_management'] =
-		  array (
-		    'special_query_limit' => 50000,
-		    'special_query_modules' =>
-		    array (
-		      0 => 'Reports',
-		      1 => 'Export',
-		      2 => 'Import',
-		      3 => 'Administration',
-		      4 => 'Sync',
-		    ),
-		    'default_limit' => 1000,
-		  );
-	}
-}
-
-/**
- * This function will merge password default settings into config file
- * @param   $sugar_config
- * @param   $sugar_version
- * @return  bool true if successful
- */
-function merge_passwordsetting(&$sugar_config, $sugar_version) {
-
-     $passwordsetting_defaults = array (
-        'passwordsetting' => array (
-            'minpwdlength' => '',
-            'maxpwdlength' => '',
-            'oneupper' => '',
-            'onelower' => '',
-            'onenumber' => '',
-            'onespecial' => '',
-            'SystemGeneratedPasswordON' => '',
-            'generatepasswordtmpl' => '',
-            'lostpasswordtmpl' => '',
-            'customregex' => '',
-            'regexcomment' => '',
-            'forgotpasswordON' => false,
-            'linkexpiration' => '1',
-            'linkexpirationtime' => '30',
-            'linkexpirationtype' => '1',
-            'userexpiration' => '0',
-            'userexpirationtime' => '',
-            'userexpirationtype' => '1',
-            'userexpirationlogin' => '',
-            'systexpiration' => '0',
-            'systexpirationtime' => '',
-            'systexpirationtype' => '0',
-            'systexpirationlogin' => '',
-            'lockoutexpiration' => '0',
-            'lockoutexpirationtime' => '',
-            'lockoutexpirationtype' => '1',
-            'lockoutexpirationlogin' => '',
-        ),
-    );
-
-    $sugar_config = sugarArrayMerge($passwordsetting_defaults, $sugar_config );
-
-    // need to override version with default no matter what
-    $sugar_config['sugar_version'] = $sugar_version;
 }
 
 //rebuild all relationships...
@@ -279,12 +188,40 @@ function verifyArguments($argv,$usage_regular)
 function getOldVersion($old_template)
 {
 	include ("{$old_template}/sugar_version.php");
-	return substr(preg_replace("/[^0-9]/", "", $sugar_version),0,3);
+	return array(substr(preg_replace("/[^0-9]/", "", $sugar_version),0,3), $sugar_flavor);
 }
-////////////// START THE BUSINESS
+
+function runSqlFiles($origVersion,$destVersion)
+{
+	global $logpath;
+	global $unzip_dir;
+
+	_writeLog("Upgrading the database from {$origVersion} to version {$destVersion}");
+	$origVersion = substr($origVersion, 0, 2) . 'x';
+	$destVersion = substr($destVersion, 0, 2) . 'x';
+	if(strcmp($origVersion, $destVersion) == 0) {
+		_writeLog("*** Skipping schema upgrade for point release.");
+		return;
+	}
+
+	$schemaFileName = "$unzip_dir/scripts/{$origVersion}_to_{$destVersion}_".$GLOBALS['db']->getScriptName().".sql";
+	if(is_file($schemaFileName)) {
+		_writeLog("Running SQL file $schemaFileName");
+		ob_start();
+		@parseAndExecuteSqlFile($schemaFileName);
+		ob_end_clean();
+	} else {
+		_writeLog("*** ERROR: Schema change script [{$schemaFileName}] could not be found!");
+	}
+}
+
+/////////////////////////////////////////////////////////////////
+///////////////////////////////////////////// START THE BUSINESS
+/////////////////////////////////////////////////////////////////
 
 // only run from command line
-if(isset($_SERVER['HTTP_USER_AGENT'])) {
+$sapi_type = php_sapi_name();
+if(isset($_SERVER['HTTP_USER_AGENT']) || substr($sapi_type, 0, 3) != 'cli') {
 	fwrite(STDERR,'This utility may only be run from the command line or command prompt.');
 	exit(1);
 }
@@ -309,7 +246,6 @@ $_SESSION['silent_upgrade'] = true;
 $_SESSION['step'] = 'silent'; // flag to NOT try redirect to 4.5.x upgrade wizard
 
 $_REQUEST = array();
-$_REQUEST['addTaskReminder'] = 'remind';
 
 define('SUGARCRM_INSTALL', 'SugarCRM_Install');
 
@@ -325,18 +261,16 @@ $template	= $argv[2];
 $old_template = $argv[3];
 $user_name = isset($argv[4])? $argv[4]:"admin";
 
-$subdirs	= array('full', 'langpack', 'module', 'patch', 'theme', 'temp');
+$unzip_dir = getcwd();
 $logpath = $path. "/shadow_upgrade.log";
-$origVersion = getOldVersion($old_template);
 
-define('SUGARCRM_PRE_INSTALL_FILE', 'scripts/pre_install.php');
-define('SUGARCRM_POST_INSTALL_FILE', 'scripts/post_install.php');
-define('SUGARCRM_PRE_UNINSTALL_FILE', 'scripts/pre_uninstall.php');
-define('SUGARCRM_POST_UNINSTALL_FILE', 'scripts/post_uninstall.php');
+// FIXME: can we use regular pre-post scripts?
+define('SUGARCRM_PRE_INSTALL_FILE', "$unzip_dir/scripts/shadow_pre_install.php");
+define('SUGARCRM_POST_INSTALL_FILE', "$unzip_dir/scripts/shadow_post_install.php");
 
 echo "\n";
 echo "********************************************************************\n";
-echo "***************This Upgrade process may take sometime***************\n";
+echo "***************This Upgrade process may take some time**************\n";
 echo "********************************************************************\n";
 echo "\n";
 
@@ -345,11 +279,16 @@ chdir($path);
 $cwd = $path;
 
 ini_set('error_reporting',1);
-set_include_path($path.PATH_SEPARATOR.get_include_path());
+set_include_path($template.PATH_SEPARATOR.get_include_path());
 
 require_once('include/entryPoint.php');
 require_once('include/SugarLogger/SugarLogger.php');
 require_once('include/utils/zip_utils.php');
+require_once('modules/UpgradeWizard/uw_utils.php');
+require_once("modules/Administration/QuickRepairAndRebuild.php");
+require_once('modules/Administration/Administration.php');
+require_once('modules/Administration/upgrade_custom_relationships.php');
+require_once('modules/MySettings/TabController.php');
 
 require("$cwd/config.php");
 require_once("sugar_version.php"); // provides $sugar_version & $sugar_flavor
@@ -359,6 +298,13 @@ $UWstrings		= return_module_language('en_us', 'UpgradeWizard');
 $adminStrings	= return_module_language('en_us', 'Administration');
 $mod_strings	= array_merge($adminStrings, $UWstrings);
 
+list($origVersion, $origFlavor) = getOldVersion($old_template);
+if($origFlavor == 'COM' && $sugar_flavor != 'COM') {
+	$_SESSION['upgrade_from_flavor'] = 'SugarCE to SugarPro';
+	$ce_to_pro_ent = true;
+} else {
+	$ce_to_pro_ent = false;
+}
 /////////////////////////////////////////////////////////////////////////////
 //Adding admin user to the silent upgrade
 
@@ -374,38 +320,23 @@ if(isset($logged_user['id']) && $logged_user['id'] != null){
 }
 
 $configOptions = $sugar_config['dbconfig'];
-require_once('modules/UpgradeWizard/uw_utils.php'); // must upgrade UW first
-// FIXME?
-//if(function_exists('set_upgrade_vars')){
-//	set_upgrade_vars();
-//}
 
 if($configOptions['db_type'] == 'mysql'){
 	//Change the db wait_timeout for this session
 	$que ="select @@wait_timeout";
 	$result = $db->query($que);
 	$tb = $db->fetchByAssoc($result);
-	logThis('Wait Timeout before change ***** '.$tb['@@wait_timeout'] , $logpath);
+	writeLog('Wait Timeout before change ***** '.$tb['@@wait_timeout'] );
 	$query ="set wait_timeout=28800";
 	$db->query($query);
 	$result = $db->query($que);
 	$ta = $db->fetchByAssoc($result);
-	logThis('Wait Timeout after change ***** '.$ta['@@wait_timeout'] , $logpath);
+	writeLog('Wait Timeout after change ***** '.$ta['@@wait_timeout'] );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 ////	RUN SILENT UPGRADE
 ob_start();
-if(file_exists('ModuleInstall/PackageManager/PackageManagerDisplay.php')) {
-	require_once('ModuleInstall/PackageManager/PackageManagerDisplay.php');
-}
-
-//Initialize the session variables. If upgrade_progress.php is already created
-//look for session vars there and restore them
-// FIXME?
-//if(function_exists('initialize_session_vars')){
-//	initialize_session_vars();
-//}
 
 ///////////////////////////////////////////////////////////////////////////////
 ////	HANDLE CUSTOMIZATIONS
@@ -421,13 +352,13 @@ foreach($custom_files as $custom_file) {
 	if(isset($old_files[$custom_file]) && isset($new_files[$custom_file]) &&
 		$old_files[$custom_file] != $new_files[$custom_file] && $new_files[$custom_file] != md5_file($custom_file)) {
 		// file was updated by upgrade
-		logThis("File $custom_file updated, moving customized version out", $logpath);
+		writeLog("File $custom_file updated, moving customized version out");
 	} elseif(isset($old_files[$custom_file]) && !isset($new_files[$custom_file])) {
 		// file was deleted
-		logThis("File $custom_file was deleted in updated version, moving customized version out", $logpath);
+		writeLog("File $custom_file was deleted in updated version, moving customized version out");
 	} elseif(isset($new_files[$custom_file]) && !isset($old_files[$custom_file]) && $new_files[$custom_file] != md5_file($custom_file)) {
 		// new file was added
-		logThis("File $custom_file was added in updatef version, moving customized version out", $logpath);
+		writeLog("File $custom_file was added in updated version, moving customized version out");
 	} else {
 		continue;
 	}
@@ -439,157 +370,193 @@ if($moved) {
 	echo "*** $moved customized files were moved aside, please check them in $backup_dir. Please see $logpath for more details.";
 }
 ////////////////COMMIT PROCESS BEGINS///////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////
-////	HANDLE PREINSTALL SCRIPTS
-// FIXME?
-//if(empty($errors)) {
-//	$file = constant('SUGARCRM_PRE_INSTALL_FILE');
-//	if(is_file($file)) {
-//		include($file);
-//		if(!didThisStepRunBefore('commit','pre_install')){
-//			set_upgrade_progress('commit','in_progress','pre_install','in_progress');
-//			pre_install();
-//			set_upgrade_progress('commit','in_progress','pre_install','done');
-//		}
-//	}
-//}
-
-//Clean smarty from cache
-cleanFromCache($sugar_config, 'smarty');
-upgrade_check_errors($errors);
-///////////////////////////////////////////////////////////////////////////////
-////	HANDLE POSTINSTALL SCRIPTS
-logThis('Starting post_install()...', $logpath);
-
 $trackerManager = TrackerManager::getInstance();
 $trackerManager->pause();
 $trackerManager->unsetMonitors();
-// FIXME: prepare for postinstall script
-if (!didThisStepRunBefore('commit', 'post_install')) {
-    $file = constant('SUGARCRM_POST_INSTALL_FILE');
-    if (is_file($file)) {
-        //set_upgrade_progress('commit','in_progress','post_install','in_progress');
-        $progArray['post_install'] = 'in_progress';
-        post_install_progress($progArray, 'set');
-        include ($file);
-        post_install();
-        executeConvertTablesSql($db->dbType, $_SESSION['allTables']);
-        //set process to done
-        $progArray['post_install'] = 'done';
-        //set_upgrade_progress('commit','in_progress','post_install','done');
-        post_install_progress($progArray, 'set');
-    }
-    //clean vardefs
-    logThis('Performing UWrebuild()...', $logpath);
-    ob_start();
-    @UWrebuild();
-    ob_end_clean();
-    logThis('UWrebuild() done.', $logpath);
 
-    //// ENSURE config.php HAS PROPER VARS
-    logThis('begin check default permissions .', $logpath);
-    checkConfigForPermissions($sugar_config);
-    logThis('end check default permissions .', $logpath);
+//Clean smarty from cache
+@deleteCache();
+upgrade_check_errors($errors);
 
-    logThis('begin check logger settings .', $logpath);
-    checkLoggerSettings($sugar_config);
-    logThis('begin check logger settings .', $logpath);
+// Run SQL upgrades
+runSqlFiles($origVersion,$sugar_version);
+// Set new version
+upgradeDbAndFileVersion($sugar_version);
+if($ce_to_pro_ent) {
+	// Add languages
+	if(is_file('install/lang.config.php')){
+		_writeLog('install/lang.config.php exists lets import the file/array insto sugar_config/config.php');
+		require_once('install/lang.config.php');
 
-    logThis('begin check resource settings .', $logpath);
-    checkResourceSettings($sugar_config);
-    logThis('begin check resource settings .', $logpath);
+		foreach($config['languages'] as $k=>$v){
+			$sugar_config['languages'][$k] = $v;
+		}
+	} else {
+		_writeLog('*** ERROR: install/lang.config.php was not found and writen to config.php!!');
+	}
 
-    logThis('Set default_theme to Sugar', $logpath);
-    $sugar_config['default_theme'] = 'Sugar';
+	if(isset($sugar_config['sugarbeet']))
+	{
+		//$sugar_config['sugarbeet'] is only set in COMM
+		unset($sugar_config['sugarbeet']);
+	}
+	if(isset($sugar_config['disable_team_access_check']))
+	{
+		//no need to write to config.php
+		unset($sugar_config['disable_team_access_check']);
+	}
 
-    logThis('Set default_max_tabs to 7', $logpath);
-    $sugar_config['default_max_tabs'] = '7';
-    //// WRITE config.php
-    ksort($sugar_config);
-    if (!write_array_to_file("sugar_config", $sugar_config, "$cwd/config.php")) {
-        logThis('*** ERROR: could not write $cwd/config.php! - upgrade will fail!', $logpath);
-        $errors[] = "Could not write $cwd/config.php!";
-    }
+	$passwordsetting_defaults = array (
+			'passwordsetting' => array (
+					'minpwdlength' => '',
+					'maxpwdlength' => '',
+					'oneupper' => '',
+					'onelower' => '',
+					'onenumber' => '',
+					'onespecial' => '',
+					'SystemGeneratedPasswordON' => '',
+					'generatepasswordtmpl' => '',
+					'lostpasswordtmpl' => '',
+					'customregex' => '',
+					'regexcomment' => '',
+					'forgotpasswordON' => false,
+					'linkexpiration' => '1',
+					'linkexpirationtime' => '30',
+					'linkexpirationtype' => '1',
+					'userexpiration' => '0',
+					'userexpirationtime' => '',
+					'userexpirationtype' => '1',
+					'userexpirationlogin' => '',
+					'systexpiration' => '0',
+					'systexpirationtime' => '',
+					'systexpirationtype' => '0',
+					'systexpirationlogin' => '',
+					'lockoutexpiration' => '0',
+					'lockoutexpirationtime' => '',
+					'lockoutexpirationtype' => '1',
+					'lockoutexpirationlogin' => '',
+			),
+	);
+	$sugar_config = sugarArrayMerge($passwordsetting_defaults, $sugar_config );
 
-    logThis('post_install() done.', $logpath);
+	writeLog('Set default_max_tabs to 7');
+	$sugar_config['default_max_tabs'] = '7';
+
+	writeLog('Set default_theme to Sugar');
+	$sugar_config['default_theme'] = 'Sugar';
+
+	writeLog('Upgrading tracker dashlets for sales and marketing start.');
+	upgradeDashletsForSalesAndMarketing();
+	writeLog('Upgrading tracker dashlets for sales and marketing start.');
+
+	// Update admin values
+	$admin = new Administration();
+	$admin->saveSetting('license', 'users', 0);
+	$key = array('num_lic_oc','key','expire_date');
+	foreach($key as $k){
+		$admin->saveSetting('license', $k, '');
+	}
+
 }
+
+$sugar_config['sugar_version'] = $sugar_version;
+if(empty($sugar_config['js_lang_version'])) {
+	$sugar_config['js_lang_version'] = 1;
+} else {
+	$sugar_config['js_lang_version'] += 1;
+}
+
+ksort( $sugar_config );
+if( !write_array_to_file( "sugar_config", $sugar_config, "config.php" ) ) {
+	_writeLog('*** ERROR: could not write language config information to config.php!!');
+	$errors[] = 'Could not write config.php!';
+}else{
+	_writeLog('sugar_config array in config.php has been updated with language config contents');
+}
+///////////////////////////////////////////////////////////////////////////////
+////	HANDLE POSTINSTALL SCRIPTS
+writeLog('Starting post_install()...');
+
+// FIXME: prepare for postinstall script
+$file = constant('SUGARCRM_POST_INSTALL_FILE');
+if (is_file($file)) {
+	include ($file);
+    post_install();
+}
+
 upgrade_check_errors($errors);
 ///////////////////////////////////////////////////////////////////////////////
 ////	REGISTER UPGRADE
-// FIXME: what to do here?
-logThis('Registering upgrade with UpgradeHistory', $logpath);
-if(!didThisStepRunBefore('commit','upgradeHistory')){
-    set_upgrade_progress('commit', 'in_progress', 'upgradeHistory', 'in_progress');
-    $file_action = "copied";
-    // if error was encountered, script should have died before now
-    $new_upgrade = new UpgradeHistory();
-    $new_upgrade->filename = $install_file;
-    $new_upgrade->md5sum = md5_file($install_file);
-    $new_upgrade->name = $zip_from_dir;
-    $new_upgrade->description = $manifest['description'];
-    $new_upgrade->type = 'patch';
-    $new_upgrade->version = $sugar_version;
-    $new_upgrade->status = "installed";
-    $new_upgrade->manifest = (!empty($_SESSION['install_manifest']) ? $_SESSION['install_manifest'] : '');
+writeLog('Registering upgrade with UpgradeHistory');
 
-    if ($new_upgrade->description == null) {
-        $new_upgrade->description = "Silent Upgrade was used to upgrade the instance";
-    } else {
-        $new_upgrade->description = $new_upgrade->description .
-             " Silent Upgrade was used to upgrade the instance.";
-     }
-     $new_upgrade->save();
-     set_upgrade_progress('commit', 'in_progress', 'upgradeHistory', 'done');
-     set_upgrade_progress('commit', 'done', 'commit', 'done');
-}
+// if error was encountered, script should have died before now
+// FIXME: what values to use here?
+$new_upgrade = new UpgradeHistory();
+$new_upgrade->filename = '';
+$new_upgrade->md5sum = '';
+$new_upgrade->name = '';
+$new_upgrade->description = 'Shadow Silent Upgrade was used to upgrade the instance';
+$new_upgrade->type = 'shadow upgrade';
+$new_upgrade->version = $sugar_version;
+$new_upgrade->status = "installed";
+$new_upgrade->manifest = '';
+$new_upgrade->save();
 
 upgrade_check_errors($errors);
-//delete cache/modules before rebuilding the relations
-//Clean modules from cache
-cleanFromCache($sugar_config, 'modules');
-cleanFromCache($sugar_config, 'themes');
 
-ob_start();
-logThis('Start rebuild relationships.', $logpath);
-@rebuildRelations();
-logThis('End rebuild relationships.', $logpath);
-@createMissingRels();
-ob_end_clean();
+//////////// UPDATE TABS
+//check to see if there are any new files that need to be added to systems tab
+//retrieve old modules list
+writeLog('check to see if new modules exist');
+$oldModuleList = array();
+$newModuleList = array();
+include($old_template.'/include/modules.php');
+$oldModuleList = $moduleList;
+include('include/modules.php');
+$newModuleList = $moduleList;
 
-set_upgrade_progress('end','in_progress','end','in_progress');
+//include tab controller
+$newTB = new TabController();
 
-if(function_exists('deleteCache')){
-	set_upgrade_progress('end','in_progress','deleteCache','in_progress');
-	@deleteCache();
-	set_upgrade_progress('end','in_progress','deleteCache','done');
+//make sure new modules list has a key we can reference directly
+$newModuleList = $newTB->get_key_array($newModuleList);
+$oldModuleList = $newTB->get_key_array($oldModuleList);
+
+//iterate through list and remove commonalities to get new modules
+foreach ($newModuleList as $remove_mod){
+	if(in_array($remove_mod, $oldModuleList)){
+		unset($newModuleList[$remove_mod]);
+	}
 }
 
-///////////////////////////////////////////////////////////////////////////////
-////	HANDLE REMINDERS
-// FIXME?
-//if(empty($errors)) {
-//	commitHandleReminders($skippedFiles, $logpath);
-//}
-
-require_once('modules/Administration/Administration.php');
-$admin = new Administration();
-$admin->saveSetting('system','adminwizard',1);
-
-///////////////////////////////////////////////////////////////////////////////
-////	HANDLE PREFERENCES
-logThis('Upgrading user preferences start .', $logpath);
-if(function_exists('upgradeUserPreferences')){
-   upgradeUserPreferences();
+if($ce_to_pro_ent) {
+	$must_have_modules= array(
+			'Activities'=>'Activities',
+			'Calendar'=>'Calendar',
+			'Reports' => 'Reports',
+			'Quotes' => 'Quotes',
+			'Products' => 'Products',
+			'Forecasts' => 'Forecasts',
+			'Contracts' => 'Contracts',
+			'KBDocuments' => 'KBDocuments'
+	);
+	$newModuleList = array_merge($newModuleList,$must_have_modules);
 }
-logThis('Upgrading user preferences finish .', $logpath);
 
-///////////////////////////////////////////////////////////////////////////////
-////	HANDLE RELATIONSHIPS
-fix_report_relationships($path);
-require_once('modules/Administration/upgrade_custom_relationships.php');
-upgrade_custom_relationships();
+//new modules list now has left over modules which are new to this install, so lets add them to the system tabs
+writeLog('new modules to add are '.var_export($newModuleList,true));
 
+//grab the existing system tabs
+$tabs = $newTB->get_system_tabs();
+
+//add the new tabs to the array
+foreach($newModuleList as $nm ){
+	$tabs[$nm] = $nm;
+}
+
+//now assign the modules to system tabs
+$newTB->set_system_tabs($tabs);
+writeLog('module tabs updated');
 ///////////////////////////////////////////////////////////////////////////////
 ////	HANDLE JS
 // re-minify the JS source files
@@ -598,29 +565,96 @@ $_REQUEST['js_rebuild_concat'] = 'rebuild';
 require_once('jssource/minify.php');
 
 upgrade_check_errors($errors);
-///////////////////////////////////////////////////////////////////////////////
-////	HANDLE DATABASE
-logThis('About to repair the database.', $logpath);
-//Use Repair and rebuild to update the database.
-require_once("modules/Administration/QuickRepairAndRebuild.php");
-$rac = new RepairAndClear();
-$rac->repairAndClearAll(array('clearAll'), $mod_strings['LBL_ALL_MODULES'], true, false);
-logThis('database repaired', $logpath);
+
+ob_start();
+writeLog('Start rebuild relationships.');
+@rebuildRelations();
+writeLog('End rebuild relationships.');
+@createMissingRels();
+ob_end_clean();
+
+$admin = new Administration();
+$admin->saveSetting('system','adminwizard',1);
 
 ///////////////////////////////////////////////////////////////////////////////
-////	HANDLE FAVORITES
-if($origVersion < '610')
+////	HANDLE PREFERENCES
+writeLog('Upgrading user preferences start .');
+if(function_exists('upgradeUserPreferences')){
+   upgradeUserPreferences();
+}
+writeLog('Upgrading user preferences finish .');
+
+///////////////////////////////////////////////////////////////////////////////
+////	HANDLE RELATIONSHIPS
+upgrade_custom_relationships();
+
+///////////////////////////////////////////////////////////////////////////////
+////	HANDLE DATABASE
+writeLog('About to repair the database.');
+//Use Repair and rebuild to update the database.
+$rac = new RepairAndClear();
+$rac->repairAndClearAll(array('clearAll'), $mod_strings['LBL_ALL_MODULES'], true, false);
+writeLog('database repaired');
+
+if($ce_to_pro_ent) {
+	//add the global team if it does not exist
+	$globalteam = new Team();
+	$globalteam->retrieve('1');
+	require_once('modules/Administration/language/en_us.lang.php');
+	if(isset($globalteam->name)){
+		writeLog("Global team exists");
+	}else{
+		$globalteam->create_team("Global", $mod_strings['LBL_GLOBAL_TEAM_DESC'], $globalteam->global_team);
+	}
+
+	writeLog(" Start Building private teams");
+
+	upgradeModulesForTeam();
+	writeLog(" Finish Building private teams");
+
+	writeLog(" Start Building the team_set and team_sets_teams");
+	upgradeModulesForTeamsets();
+	writeLog(" Finish Building the team_set and team_sets_teams");
+
+	writeLog(" Start modules/Administration/upgradeTeams.php");
+	include('modules/Administration/upgradeTeams.php');
+	writeLog(" Finish modules/Administration/upgradeTeams.php");
+
+	if(check_FTS()){
+		$GLOBALS['db']->full_text_indexing_setup();
+	}
+}
+
+// cleaup all caches at the end
+@deleteCache();
+
+//delete cache/modules before rebuilding the relations
+cleanFromCache($sugar_config, 'Expressions');
+
+//remove lanugage cache files
+require_once('include/SugarObjects/LanguageManager.php');
+LanguageManager::clearLanguageCache();
+
+// rebuild dashlet cache
+require_once('include/Dashlets/DashletCacheBuilder.php');
+$dc = new DashletCacheBuilder();
+$dc->buildCache();
+
+//Upgrade connectors
+logThis('Begin upgrade_connectors', $path);
+upgrade_connectors();
+logThis('End upgrade_connectors', $path);
+
+if(function_exists('imagecreatetruecolor'))
 {
-    logThis("Begin: Migrating Sugar Reports Favorites to new SugarFavorites", $logpath);
-    migrate_sugar_favorite_reports();
-    logThis("Complete: Migrating Sugar Reports Favorites to new SugarFavorites", $logpath);
+	rebuildSprites(true);
 }
 
 $phpErrors = ob_get_contents();
 ob_end_clean();
-logThis("**** Potential PHP generated error messages: {$phpErrors}", $logpath);
+writeLog("**** Potential PHP generated error messages: {$phpErrors}");
 
-logThis("***** ShadowUpgrade completed successfully.", $logpath);
+writeLog("***** ShadowUpgrade completed successfully.");
 echo "********************************************************************\n";
-echo "*************************** SUCCESS*********************************\n";
+echo "*************************** SUCCESS ********************************\n";
 echo "********************************************************************\n";
