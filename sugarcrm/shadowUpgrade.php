@@ -35,12 +35,12 @@ function writeLog($message)
 	if(empty($fp)) {
 		$fp = fopen($GLOBALS['logpath'], "a+");
 		if(!$fp) {
-			die($mod_strings['ERR_UW_LOG_FILE_UNWRITABLE']);
+			die($mod_strings['ERR_UW_LOG_FILE_UNWRITABLE']."!");
 		}
 	}
 	$line = date('r').' - '.$message."\n";
 	if(@fwrite($fp, $line) === false) {
-		die($mod_strings['ERR_UW_LOG_FILE_UNWRITABLE']);
+		die($mod_strings['ERR_UW_LOG_FILE_UNWRITABLE']."!!");
 	}
 	fflush($fp);
 }
@@ -196,22 +196,22 @@ function runSqlFiles($origVersion,$destVersion)
 	global $logpath;
 	global $unzip_dir;
 
-	_writeLog("Upgrading the database from {$origVersion} to version {$destVersion}");
+	writeLog("Upgrading the database from {$origVersion} to version {$destVersion}");
 	$origVersion = substr($origVersion, 0, 2) . 'x';
 	$destVersion = substr($destVersion, 0, 2) . 'x';
 	if(strcmp($origVersion, $destVersion) == 0) {
-		_writeLog("*** Skipping schema upgrade for point release.");
+		writeLog("*** Skipping schema upgrade for point release.");
 		return;
 	}
 
 	$schemaFileName = "$unzip_dir/scripts/{$origVersion}_to_{$destVersion}_".$GLOBALS['db']->getScriptName().".sql";
 	if(is_file($schemaFileName)) {
-		_writeLog("Running SQL file $schemaFileName");
+		writeLog("Running SQL file $schemaFileName");
 		ob_start();
 		@parseAndExecuteSqlFile($schemaFileName);
 		ob_end_clean();
 	} else {
-		_writeLog("*** ERROR: Schema change script [{$schemaFileName}] could not be found!");
+		writeLog("*** ERROR: Schema change script [{$schemaFileName}] could not be found!");
 	}
 }
 
@@ -231,7 +231,8 @@ if(isset($_SERVER['HTTP_USER_AGENT']) || substr($sapi_type, 0, 3) != 'cli') {
 ///////////////////////////////////////////////////////////////////////////////
 ////	USAGE
 $usage_regular =<<<eoq2
-Usage: php.exe -f shadowUpgrade.php instance template old-template [admin]
+Usage: php -f shadowUpgrade.php instance template old-template [admin]
+
 eoq2;
 ////	END USAGE
 ///////////////////////////////////////////////////////////////////////////////
@@ -256,13 +257,13 @@ verifyArguments($argv,$usage_regular);
 ///////////////////////////////////////////////////////////////////////////////
 ////	PREP LOCALLY USED PASSED-IN VARS & CONSTANTS
 
-$path		= $argv[1];
+$instance_path		= $argv[1];
 $template	= $argv[2];
 $old_template = $argv[3];
 $user_name = isset($argv[4])? $argv[4]:"admin";
 
 $unzip_dir = getcwd();
-$logpath = $path. "/shadow_upgrade.log";
+$logpath = $path = $instance_path. "/shadow_upgrade.log";
 
 // FIXME: can we use regular pre-post scripts?
 define('SUGARCRM_PRE_INSTALL_FILE', "$unzip_dir/scripts/shadow_pre_install.php");
@@ -270,16 +271,17 @@ define('SUGARCRM_POST_INSTALL_FILE', "$unzip_dir/scripts/shadow_post_install.php
 
 echo "\n";
 echo "********************************************************************\n";
-echo "***************This Upgrade process may take some time**************\n";
+echo "************** This Upgrade process may take some time *************\n";
 echo "********************************************************************\n";
 echo "\n";
 
 $errors = array();
-chdir($path);
-$cwd = $path;
+chdir($instance_path);
+$cwd = $instance_path;
 
-ini_set('error_reporting',1);
-set_include_path($template.PATH_SEPARATOR.get_include_path());
+//ini_set('error_reporting',1);
+//set_include_path($template.PATH_SEPARATOR.$instance_path.PATH_SEPARATOR.get_include_path());
+shadow($template, $instance_path, array('cache', 'custom', 'config.php'));
 
 require_once('include/entryPoint.php');
 require_once('include/SugarLogger/SugarLogger.php');
@@ -297,8 +299,12 @@ $db = DBManagerFactory::getInstance();
 $UWstrings		= return_module_language('en_us', 'UpgradeWizard');
 $adminStrings	= return_module_language('en_us', 'Administration');
 $mod_strings	= array_merge($adminStrings, $UWstrings);
+$app_list_strings = return_app_list_strings_language('en_us');
+list($old_version, $origFlavor) = getOldVersion($old_template);
 
-list($origVersion, $origFlavor) = getOldVersion($old_template);
+$origVersion = substr(preg_replace("/[^0-9]/", "", $old_version),0,3);
+$destVersion = substr(preg_replace("/[^0-9]/", "", $sugar_version),0,3);
+
 if($origFlavor == 'COM' && $sugar_flavor != 'COM') {
 	$_SESSION['upgrade_from_flavor'] = 'SugarCE to SugarPro';
 	$ce_to_pro_ent = true;
@@ -340,10 +346,12 @@ ob_start();
 
 ///////////////////////////////////////////////////////////////////////////////
 ////	HANDLE CUSTOMIZATIONS
+// temporarily disable Shadow
+ini_set('shadow.enabled', 0);
 $old_files = getHashes($old_template);
 $new_files = getHashes($template);
 $moved = 0;
-$backup_dir = "$path/cache/backups_".date('Y_m_d_H_i_s');
+$backup_dir = "$instance_path/cache/backups_".date('Y_m_d_H_i_s');
 mkdir_recursive($backup_dir);
 // find all files that are customized for current template
 $custom_files = findAllFiles(".", array(), false, "", array("cache", "custom"));
@@ -369,6 +377,9 @@ foreach($custom_files as $custom_file) {
 if($moved) {
 	echo "*** $moved customized files were moved aside, please check them in $backup_dir. Please see $logpath for more details.";
 }
+// reenable Shadow
+ini_set('shadow.enabled', 1);
+
 ////////////////COMMIT PROCESS BEGINS///////////////////////////////////////////////////////////////
 $trackerManager = TrackerManager::getInstance();
 $trackerManager->pause();
@@ -379,20 +390,20 @@ $trackerManager->unsetMonitors();
 upgrade_check_errors($errors);
 
 // Run SQL upgrades
-runSqlFiles($origVersion,$sugar_version);
+runSqlFiles($origVersion,$destVersion);
 // Set new version
-upgradeDbAndFileVersion($sugar_version);
+updateVersions($sugar_version);
 if($ce_to_pro_ent) {
 	// Add languages
 	if(is_file('install/lang.config.php')){
-		_writeLog('install/lang.config.php exists lets import the file/array insto sugar_config/config.php');
+		writeLog('install/lang.config.php exists lets import the file/array insto sugar_config/config.php');
 		require_once('install/lang.config.php');
 
 		foreach($config['languages'] as $k=>$v){
 			$sugar_config['languages'][$k] = $v;
 		}
 	} else {
-		_writeLog('*** ERROR: install/lang.config.php was not found and writen to config.php!!');
+		writeLog('*** ERROR: install/lang.config.php was not found and writen to config.php!!');
 	}
 
 	if(isset($sugar_config['sugarbeet']))
@@ -468,10 +479,10 @@ if(empty($sugar_config['js_lang_version'])) {
 
 ksort( $sugar_config );
 if( !write_array_to_file( "sugar_config", $sugar_config, "config.php" ) ) {
-	_writeLog('*** ERROR: could not write language config information to config.php!!');
+	writeLog('*** ERROR: could not write language config information to config.php!!');
 	$errors[] = 'Could not write config.php!';
 }else{
-	_writeLog('sugar_config array in config.php has been updated with language config contents');
+	writeLog('sugar_config array in config.php has been updated');
 }
 ///////////////////////////////////////////////////////////////////////////////
 ////	HANDLE POSTINSTALL SCRIPTS
@@ -492,8 +503,8 @@ writeLog('Registering upgrade with UpgradeHistory');
 // if error was encountered, script should have died before now
 // FIXME: what values to use here?
 $new_upgrade = new UpgradeHistory();
-$new_upgrade->filename = '';
-$new_upgrade->md5sum = '';
+$new_upgrade->filename = $sugar_version;
+$new_upgrade->md5sum = md5_file("sugar_version.php");
 $new_upgrade->name = '';
 $new_upgrade->description = 'Shadow Silent Upgrade was used to upgrade the instance';
 $new_upgrade->type = 'shadow upgrade';
@@ -560,9 +571,11 @@ writeLog('module tabs updated');
 ///////////////////////////////////////////////////////////////////////////////
 ////	HANDLE JS
 // re-minify the JS source files
+writeLog("Minyfying JS files.");
 $_REQUEST['root_directory'] = $cwd;
 $_REQUEST['js_rebuild_concat'] = 'rebuild';
 require_once('jssource/minify.php');
+writeLog("Done minyfying JS files.");
 
 upgrade_check_errors($errors);
 
@@ -578,22 +591,24 @@ $admin->saveSetting('system','adminwizard',1);
 
 ///////////////////////////////////////////////////////////////////////////////
 ////	HANDLE PREFERENCES
-writeLog('Upgrading user preferences start .');
-if(function_exists('upgradeUserPreferences')){
-   upgradeUserPreferences();
-}
-writeLog('Upgrading user preferences finish .');
+writeLog('Start upgrading user preferences.');
+$mod_strings_backup = $mod_strings;
+upgradeUserPreferences();
+$mod_strings = $mod_strings_backup;
+writeLog('Done upgrading user preferences.');
 
 ///////////////////////////////////////////////////////////////////////////////
 ////	HANDLE RELATIONSHIPS
+writeLog('Start upgrading relationships.');
 upgrade_custom_relationships();
+writeLog('Done upgrading relationships.');
 
 ///////////////////////////////////////////////////////////////////////////////
 ////	HANDLE DATABASE
 writeLog('About to repair the database.');
 //Use Repair and rebuild to update the database.
 $rac = new RepairAndClear();
-$rac->repairAndClearAll(array('clearAll'), $mod_strings['LBL_ALL_MODULES'], true, false);
+$rac->repairAndClearAll(array('clearAll'), array($mod_strings['LBL_ALL_MODULES']), true, false);
 writeLog('database repaired');
 
 if($ce_to_pro_ent) {
@@ -641,9 +656,9 @@ $dc = new DashletCacheBuilder();
 $dc->buildCache();
 
 //Upgrade connectors
-logThis('Begin upgrade_connectors', $path);
+writeLog('Begin upgrade_connectors');
 upgrade_connectors();
-logThis('End upgrade_connectors', $path);
+writeLog('End upgrade_connectors');
 
 if(function_exists('imagecreatetruecolor'))
 {
