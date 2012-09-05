@@ -345,6 +345,12 @@ list($old_version, $origFlavor) = getOldVersion($old_template);
 $origVersion = substr(preg_replace("/[^0-9]/", "", $old_version),0,3);
 $destVersion = substr(preg_replace("/[^0-9]/", "", $sugar_version),0,3);
 
+if($origFlavor == 'CE' && $sugar_flavor != 'CE') {
+	$_SESSION['upgrade_from_flavor'] = 'SugarCE to SugarPro';
+	$ce_to_pro_ent = true;
+} else {
+	$ce_to_pro_ent = false;
+}
 /////////////////////////////////////////////////////////////////////////////
 //Adding admin user to the silent upgrade
 
@@ -433,6 +439,83 @@ writeLog('About to repair DB tables.');
 //Use Repair and rebuild to update the database.
 repairTables();
 writeLog('DB tables repaired');
+if($ce_to_pro_ent) {
+	// Add languages
+	if(is_file('install/lang.config.php')){
+		writeLog('install/lang.config.php exists lets import the file/array insto sugar_config/config.php');
+		require_once('install/lang.config.php');
+
+		foreach($config['languages'] as $k=>$v){
+			$sugar_config['languages'][$k] = $v;
+		}
+	} else {
+		writeLog('*** ERROR: install/lang.config.php was not found and writen to config.php!!');
+	}
+
+	if(isset($sugar_config['sugarbeet']))
+	{
+		//$sugar_config['sugarbeet'] is only set in COMM
+		unset($sugar_config['sugarbeet']);
+	}
+	if(isset($sugar_config['disable_team_access_check']))
+	{
+		//no need to write to config.php
+		unset($sugar_config['disable_team_access_check']);
+	}
+
+	$passwordsetting_defaults = array (
+			'passwordsetting' => array (
+					'minpwdlength' => '',
+					'maxpwdlength' => '',
+					'oneupper' => '',
+					'onelower' => '',
+					'onenumber' => '',
+					'onespecial' => '',
+					'SystemGeneratedPasswordON' => '',
+					'generatepasswordtmpl' => '',
+					'lostpasswordtmpl' => '',
+					'customregex' => '',
+					'regexcomment' => '',
+					'forgotpasswordON' => false,
+					'linkexpiration' => '1',
+					'linkexpirationtime' => '30',
+					'linkexpirationtype' => '1',
+					'userexpiration' => '0',
+					'userexpirationtime' => '',
+					'userexpirationtype' => '1',
+					'userexpirationlogin' => '',
+					'systexpiration' => '0',
+					'systexpirationtime' => '',
+					'systexpirationtype' => '0',
+					'systexpirationlogin' => '',
+					'lockoutexpiration' => '0',
+					'lockoutexpirationtime' => '',
+					'lockoutexpirationtype' => '1',
+					'lockoutexpirationlogin' => '',
+			),
+	);
+	$sugar_config = sugarArrayMerge($passwordsetting_defaults, $sugar_config );
+
+	writeLog('Set default_max_tabs to 7');
+	$sugar_config['default_max_tabs'] = '7';
+
+	writeLog('Set default_theme to Sugar');
+	$sugar_config['default_theme'] = 'Sugar';
+
+	writeLog('Upgrading tracker dashlets for sales and marketing start.');
+	upgradeDashletsForSalesAndMarketing();
+	writeLog('Done upgrading tracker dashlets.');
+
+	// Update admin values
+	writeLog("Updating license values");
+	$admin = new Administration();
+	$admin->saveSetting('license', 'users', 0);
+	$key = array('num_lic_oc','key','expire_date');
+	foreach($key as $k){
+		$admin->saveSetting('license', $k, '');
+	}
+	writeLog("Done updating license values");
+}
 
 $sugar_config['sugar_version'] = $sugar_version;
 if(empty($sugar_config['js_lang_version'])) {
@@ -495,6 +578,20 @@ foreach ($newModuleList as $remove_mod){
 	if(in_array($remove_mod, $oldModuleList)){
 		unset($newModuleList[$remove_mod]);
 	}
+}
+
+if($ce_to_pro_ent) {
+	$must_have_modules= array(
+			'Activities'=>'Activities',
+			'Calendar'=>'Calendar',
+			'Reports' => 'Reports',
+			'Quotes' => 'Quotes',
+			'Products' => 'Products',
+			'Forecasts' => 'Forecasts',
+			'Contracts' => 'Contracts',
+			'KBDocuments' => 'KBDocuments'
+	);
+	$newModuleList = array_merge($newModuleList,$must_have_modules);
 }
 
 //new modules list now has left over modules which are new to this install, so lets add them to the system tabs
@@ -564,6 +661,89 @@ $new_upgrade->manifest = '';
 $new_upgrade->save();
 
 upgrade_check_errors($errors);
+
+// rebuild dashlet cache
+require_once('include/Dashlets/DashletCacheBuilder.php');
+$dc = new DashletCacheBuilder();
+$dc->buildCache();
+
+if($ce_to_pro_ent) {
+	//add the global team if it does not exist
+	$globalteam = new Team();
+	$globalteam->retrieve('1');
+	require_once('modules/Administration/language/en_us.lang.php');
+	if(isset($globalteam->name)){
+		writeLog("Global team exists");
+	}else{
+		$globalteam->create_team("Global", $mod_strings['LBL_GLOBAL_TEAM_DESC'], $globalteam->global_team);
+	}
+
+	writeLog(" Start Building private teams");
+
+	upgradeModulesForTeam();
+	writeLog(" Finish Building private teams");
+
+	writeLog(" Start Building the team_set and team_sets_teams");
+	upgradeModulesForTeamsets();
+	writeLog(" Finish Building the team_set and team_sets_teams");
+
+	writeLog(" Start modules/Administration/upgradeTeams.php");
+	include('modules/Administration/upgradeTeams.php');
+	writeLog(" Finish modules/Administration/upgradeTeams.php");
+
+	if(check_FTS()){
+		writeLog("Initializing FTS");
+		$GLOBALS['db']->full_text_indexing_setup();
+		writeLog("Done initializing FTS");
+	}
+
+	// update dashlets
+	writeLog("Upgrading dashlets");
+	update_iframe_dashlets();
+	writeLog("Done upgrading dashlets");
+
+	// create default reports
+	writeLog("Creating default reports");
+    require_once('modules/Reports/SavedReport.php');
+	require_once('modules/Reports/SeedReports.php');
+    create_default_reports();
+    writeLog("Done creating default reports");
+
+    // Create portal configs
+    writeLog("Building portal config");
+    require_once("install/install_utils.php");
+    handlePortalConfig();
+    writeLog("Done building portal config");
+
+    // install default connectors
+    writeLog("Initializing default connectors");
+	require('modules/Connectors/InstallDefaultConnectors.php');
+	writeLog("Done initializing default connectors");
+
+	// repair teams
+	writeLog("Initializing teams");
+	require_once('modules/Teams/Team.php');
+	require_once('modules/Administration/RepairTeams.php');
+	process_team_access(false, false,true,'1');
+	writeLog("Done initializing teams");
+
+	// repair roles
+	writeLog("Initializing roles");
+	include('modules/ACLActions/actiondefs.php');
+	include('include/modules.php');
+	require_once('modules/ACLFields/ACLField.php');
+	include("modules/ACL/install_actions.php");
+	writeLog("Done initializing roles");
+
+	// set system_system_id
+    require_once('modules/Administration/System.php');
+    $system = new System();
+    $system->system_key = $sugar_config['unique_key'];
+    $system->user_id = 1;
+    $system->last_connect_date = date($GLOBALS['timedate']->get_date_time_format(),mktime());
+    $system_id = $system->retrieveNextKey(false, true);
+    $db->query( "INSERT INTO config (category, name, value) VALUES ( 'system', 'system_id', '" . $system_id . "')" );
+}
 
 // cleaup all caches at the end
 @deleteCache();
