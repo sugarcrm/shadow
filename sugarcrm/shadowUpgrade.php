@@ -251,7 +251,7 @@ function runSqlFiles($origVersion,$destVersion)
 		@parseAndExecuteSqlFile($schemaFileName);
 		ob_end_clean();
 	} else {
-		writeLog("*** ERROR: Schema change script [{$schemaFileName}] could not be found!");
+		writeLog("*** Schema change script [{$schemaFileName}] could not be found!");
 	}
 }
 
@@ -434,6 +434,19 @@ writeLog('About to repair DB tables.');
 repairTables();
 writeLog('DB tables repaired');
 
+///////////////////////////////////////////////////////////////////////////////
+////	HANDLE PREINSTALL SCRIPTS
+writeLog('Starting pre_install()...');
+// postinstall script
+$file = constant('SUGARCRM_PRE_INSTALL_FILE');
+if (is_file($file)) {
+	include ($file);
+	pre_install();
+}
+writeLog('Done pre_install().');
+
+upgrade_check_errors($errors);
+
 $sugar_config['sugar_version'] = $sugar_version;
 if(empty($sugar_config['js_lang_version'])) {
 	$sugar_config['js_lang_version'] = 1;
@@ -448,19 +461,6 @@ if( !write_array_to_file( "sugar_config", $sugar_config, "config.php" ) ) {
 }else{
 	writeLog('sugar_config array in config.php has been updated');
 }
-///////////////////////////////////////////////////////////////////////////////
-////	HANDLE POSTINSTALL SCRIPTS
-writeLog('Starting post_install()...');
-
-// FIXME: prepare for postinstall script
-$file = constant('SUGARCRM_POST_INSTALL_FILE');
-if (is_file($file)) {
-	include ($file);
-    post_install();
-}
-
-upgrade_check_errors($errors);
-
 
 //////////// UPDATE TABS
 //check to see if there are any new files that need to be added to systems tab
@@ -589,6 +589,19 @@ if(function_exists('imagecreatetruecolor'))
 {
 	rebuildSprites(true);
 }
+
+///////////////////////////////////////////////////////////////////////////////
+////	HANDLE POSTINSTALL SCRIPTS
+writeLog('Starting post_install()...');
+// postinstall script
+$file = constant('SUGARCRM_POST_INSTALL_FILE');
+if (is_file($file)) {
+	include ($file);
+	post_install();
+}
+writeLog('Done post_install().');
+
+upgrade_check_errors($errors);
 
 $phpErrors = ob_get_contents();
 ob_end_clean();
