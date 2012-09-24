@@ -426,7 +426,10 @@ upgrade_check_errors($errors);
 // Run SQL upgrades
 runSqlFiles($origVersion,$destVersion);
 // Set new version
-updateVersions($sugar_version);
+writeLog('Updating database version...');
+$db->query("DELETE FROM config WHERE category = 'info' AND name = 'sugar_version'");
+$db->query("INSERT INTO config (category, name, value) VALUES ('info', 'sugar_version', '{$sugar_version}')");
+writeLog('Database version updated');
 ///////////////////////////////////////////////////////////////////////////////
 ////	HANDLE DATABASE
 writeLog('About to repair DB tables.');
