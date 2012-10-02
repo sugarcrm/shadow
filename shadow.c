@@ -66,6 +66,7 @@ static void (*orig_chmod)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_chdir)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_fread)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_realpath)(INTERNAL_FUNCTION_PARAMETERS);
+static void (*orig_is_writable)(INTERNAL_FUNCTION_PARAMETERS);
 
 static char *shadow_resolve_path(const char *filename, int filename_len TSRMLS_DC);
 static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filename, char *mode,
@@ -83,6 +84,7 @@ static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_chdir(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_fread(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS);
+static void shadow_is_writable(INTERNAL_FUNCTION_PARAMETERS);
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_shadow, 0, 0, 2)
 	ZEND_ARG_INFO(0, template)
@@ -129,7 +131,7 @@ zend_module_entry shadow_module_entry = {
 	PHP_RINIT(shadow),
 	PHP_RSHUTDOWN(shadow),
 	PHP_MINFO(shadow),
-	"0.1",
+	"0.2",
     PHP_MODULE_GLOBALS(shadow),
     PHP_GINIT(shadow),
     PHP_GSHUTDOWN(shadow),
@@ -206,6 +208,7 @@ PHP_MINIT_FUNCTION(shadow)
 	SHADOW_OVERRIDE(chdir);
 	SHADOW_OVERRIDE(fread);
 	SHADOW_OVERRIDE(realpath);
+	SHADOW_OVERRIDE(is_writable);
 
 	return SUCCESS;
 }
@@ -1012,6 +1015,54 @@ static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS)
 
 	orig_realpath(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 }
+/* }}} */
+
+/* {{{ proto bool is_writable(string filename)
+   Returns true if file can be written */
+static void shadow_is_writable(INTERNAL_FUNCTION_PARAMETERS)
+{
+	char *filename = NULL;
+	int filename_len;
+	char *instname;
+	zval **name;
+	zval *old_name, *new_name;
+	int dir_len;
+
+	if(!SHADOW_ENABLED()) {
+		orig_is_writable(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		return;
+	}
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &filename, &filename_len) == FAILURE) {
+		return;
+	}
+
+
+	instname = template_to_instance(filename, 0 TSRMLS_CC);
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_STAT) fprintf(stderr, "is_writable %s (%s)\n", filename, instname);
+	if(!instname) {
+		/* Didn't find anything - use original handler */
+		orig_is_writable(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		return;
+	}
+
+	ensure_dir_exists(instname, &shadow_wrapper, NULL TSRMLS_CC);
+	/* Check whether dir containing the file is writable */
+	zend_dirname(instname, strlen(instname));
+	name = shadow_get_arg(0 TSRMLS_CC);
+	if(!name || !*name) {
+		orig_is_writable(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		return;
+	}
+	old_name = *name;
+	ALLOC_INIT_ZVAL(new_name);
+	ZVAL_STRING(new_name, instname, 0);
+	*name = new_name;
+	orig_is_writable(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+	*name = old_name;
+	zval_ptr_dtor(&new_name);
+}
+/* }}} */
 
 /*
  * Local variables:
