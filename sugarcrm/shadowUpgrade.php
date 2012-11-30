@@ -316,8 +316,8 @@ echo "********************************************************************\n";
 echo "\n";
 
 $errors = array();
-chdir($instance_path);
 $cwd = $instance_path;
+chdir($template);
 
 //ini_set('error_reporting',1);
 //set_include_path($template.PATH_SEPARATOR.$instance_path.PATH_SEPARATOR.get_include_path());
@@ -332,7 +332,7 @@ require_once('modules/Administration/Administration.php');
 require_once('modules/Administration/upgrade_custom_relationships.php');
 require_once('modules/MySettings/TabController.php');
 
-require("$cwd/config.php");
+require("$instance_path/config.php");
 require_once("sugar_version.php"); // provides $sugar_version & $sugar_flavor
 $log = LoggerManager::getLogger('SugarCRM');
 $db = DBManagerFactory::getInstance();
@@ -388,7 +388,7 @@ $moved = 0;
 $backup_dir = "$instance_path/cache/backups_".date('Y_m_d_H_i_s');
 mkdir_recursive($backup_dir);
 // find all files that are customized for current template
-$custom_files = findAllFiles(".", array(), false, "", array("./cache", "./custom"));
+$custom_files = findAllFiles($instance_path, array(), false, "", array("./cache", "./custom"));
 foreach($custom_files as $custom_file) {
 	if($custom_file == 'config.php' || $custom_file == 'config_override.php') continue;
 	if(isset($old_files[$custom_file]) && isset($new_files[$custom_file]) &&
@@ -518,7 +518,7 @@ writeLog('module tabs updated');
 ////	HANDLE JS
 // re-minify the JS source files
 writeLog("Minyfying JS files.");
-$_REQUEST['root_directory'] = $cwd;
+$_REQUEST['root_directory'] = $instance_path;
 $_REQUEST['js_rebuild_concat'] = 'rebuild';
 require_once('jssource/minify.php');
 writeLog("Done minyfying JS files.");
