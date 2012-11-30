@@ -609,19 +609,35 @@ static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filen
 	return plain_ops->stream_opener(wrapper, filename, mode, options, opened_path, context STREAMS_CC TSRMLS_CC);
 }
 
+/**
+ * PHP uses access() for plain files, but manual mask matches for stream files.
+ * This leads to the problem that is_writable() returns false for root if filemask is not other-write
+ * This hack sets mode to 777 if current user is root
+ */
+static void adjust_stat(php_stream_statbuf *ssb)
+{
+	if(geteuid() == 0) {
+		ssb->sb.st_mode |= 0777;
+	}
+}
+
 static int shadow_stat(php_stream_wrapper *wrapper, char *url, int flags, php_stream_statbuf *ssb, php_stream_context *context TSRMLS_DC)
 {
 	char *instname = template_to_instance(url, 1 TSRMLS_CC);
+	int res;
 	if(SHADOW_ENABLED()) {
 		if(SHADOW_G(debug) & SHADOW_DEBUG_STAT)  fprintf(stderr, "Stat: %s (%s) %d\n", url, instname, flags);
 	}
 	if(instname) {
-		int res = plain_ops->url_stat(wrapper, instname, flags, ssb, context TSRMLS_CC);
+		res = plain_ops->url_stat(wrapper, instname, flags, ssb, context TSRMLS_CC);
 		if(SHADOW_G(debug) & SHADOW_DEBUG_STAT)  fprintf(stderr, "Stat res: %d\n", res);
 		efree(instname);
+		adjust_stat(ssb);
 		return res;
 	}
-	return plain_ops->url_stat(wrapper, url, flags, ssb, context TSRMLS_CC);
+	res = plain_ops->url_stat(wrapper, url, flags, ssb, context TSRMLS_CC);
+	adjust_stat(ssb);
+	return res;
 }
 
 static int shadow_unlink(php_stream_wrapper *wrapper, char *url, int options, php_stream_context *context TSRMLS_DC)
@@ -1054,6 +1070,9 @@ static void shadow_is_writable(INTERNAL_FUNCTION_PARAMETERS)
 		orig_is_writable(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
+	/* if it is not writable, we'll check the directory in case template file is not writable,
+	 * but we can write the same file into the instance
+	 */
 	old_name = *name;
 	ALLOC_INIT_ZVAL(new_name);
 	ZVAL_STRING(new_name, instname, 0);
