@@ -16,8 +16,6 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: header 297205 2010-03-30 21:09:07Z johannes $ */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -133,7 +131,7 @@ zend_module_entry shadow_module_entry = {
 	PHP_RINIT(shadow),
 	PHP_RSHUTDOWN(shadow),
 	PHP_MINFO(shadow),
-	"0.2",
+	"0.3",
     PHP_MODULE_GLOBALS(shadow),
     PHP_GINIT(shadow),
     PHP_GSHUTDOWN(shadow),
