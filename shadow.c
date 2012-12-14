@@ -1113,15 +1113,15 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Glob: %s (%s)\n", path, instname);
 	if(!instname) {
 		/* we don't have instance dir, don't bother with merging */
-		efree(path);
 		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing template: %s\n", path);
 		orig_glob(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		efree(path);
 		return;
 	} else if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), instname, strlen(instname))) {
 		/* We can get template dir here, if instance dir does not exist, we still have only one directory then */
-		efree(path);
 		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing template(2): %s\n", path);
 		shadow_call_replace_name(0, instname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		efree(path);
 		return;
 	}
 //	efree(path);
@@ -1132,6 +1132,7 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 		efree(templname);
 		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing instance: %s\n", path);
 		shadow_call_replace_name(0, instname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		efree(path);
 		return;
 	}
 	/* We have both, so we will have to merge */
