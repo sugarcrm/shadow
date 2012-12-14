@@ -1078,6 +1078,7 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	void *dummy = (void *)1;
 	int instlen, templen;
 	long num;
+	int skip_template=0;
 
 	if(!SHADOW_ENABLED()) {
 		orig_glob(INTERNAL_FUNCTION_PARAM_PASSTHRU);
@@ -1103,23 +1104,22 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	if(is_instance_only(path TSRMLS_CC)) {
 		/* if it's instance-only dir, we won't merge in any case */
 		instname = template_to_instance(path, 0 TSRMLS_CC);
+		skip_template = 1;
 		if(SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Glob instance only: %s (%s)\n", path, instname);
-		shadow_call_replace_name(0, instname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU);
-		efree(path);
-		return;
-	}
-
-	instname = template_to_instance(path, 2 TSRMLS_CC);
-	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Glob: %s => %s (%s)\n", filename, path, instname);
-	if(!instname) {
-		/* we don't have instance dir, don't bother with merging */
-		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing template: %s\n", filename);
-		orig_glob(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-		efree(path);
-		return;
+	} else {
+		instname = template_to_instance(path, 2 TSRMLS_CC);
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Glob: %s => %s (%s)\n", filename, path, instname);
+		if(!instname) {
+			/* we don't have instance dir, don't bother with merging */
+			if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing template: %s\n", filename);
+			orig_glob(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+			efree(path);
+			return;
+		}
 	}
 	/* here we have instname */
 	instlen = strlen(instname);
+#if 0
 	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), instname, instlen)) {
 		/* We can get template dir here, if instance dir does not exist, we still have only one directory then */
 		instname = erealloc(instname, instlen+strlen(mask)+1);
@@ -1129,42 +1129,52 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 		efree(path);
 		return;
 	}
+#endif
 	/* We got instance dir, does template dir exist too? */
 	spprintf(&templname, MAXPATHLEN, "%s/%s", SHADOW_G(template), instname+SHADOW_G(instance_len)+1);
 	instname = erealloc(instname, instlen+strlen(mask)+1);
 	strcat(instname, mask);
+#if 0
+/*
+ * Remove existance check for template - since we'd need to translate names here anyway, we better fall though and have glob return empty
+ */
 	if(VCWD_ACCESS(templname, F_OK) != 0) {
-		/* template part does not exist, no need to merge */
 		efree(templname);
 		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing instance: %s\n", instname);
 		shadow_call_replace_name(0, instname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		efree(path);
 		return;
 	}
+#endif
 	/* We have both, so we will have to merge */
-	templen = strlen(templname);
-	templname = erealloc(templname, templen+strlen(mask)+1);
-	strcat(templname, mask);
-	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing merge: %s %s\n", instname, templname);
-
-	/* call with template */
-	if(shadow_call_replace_name(0, templname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU) != SUCCESS || Z_TYPE_P(return_value) != IS_ARRAY) {
-		efree(instname);
-		efree(templname);
-		return;
-	}
-
 	ALLOC_HASHTABLE(mergedata);
 	zend_hash_init(mergedata, 10, NULL, NULL, 0);
-	/* cut off instname and put path part there */
-	zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(return_value), &pos);
-	while (zend_hash_get_current_data_ex(Z_ARRVAL_P(return_value), (void **)&src_entry, &pos) == SUCCESS) {
-		char *mergepath;
-		if(Z_TYPE_PP(src_entry) != IS_STRING) continue; /* weird, glob shouldn't do that to us */
-		spprintf(&mergepath, MAXPATHLEN, "%s/%s", path, Z_STRVAL_PP(src_entry)+templen+1);
-		zend_hash_add(mergedata, mergepath, strlen(mergepath), &dummy, sizeof(void *), NULL);
-		efree(mergepath);
-		zend_hash_move_forward_ex(Z_ARRVAL_P(return_value), &pos);
+
+	if(!skip_template) {
+		templen = strlen(templname);
+		templname = erealloc(templname, templen+strlen(mask)+1);
+		strcat(templname, mask);
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing merge: %s %s\n", instname, templname);
+
+		/* call with template */
+		if(shadow_call_replace_name(0, templname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU) == SUCCESS && Z_TYPE_P(return_value) == IS_ARRAY) {
+			/* cut off instname and put path part there */
+			zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(return_value), &pos);
+			while (zend_hash_get_current_data_ex(Z_ARRVAL_P(return_value), (void **)&src_entry, &pos) == SUCCESS) {
+				char *mergepath;
+				if(Z_TYPE_PP(src_entry) != IS_STRING) continue; /* weird, glob shouldn't do that to us */
+				spprintf(&mergepath, MAXPATHLEN, "%s/%s", path, Z_STRVAL_PP(src_entry)+templen+1);
+				zend_hash_add(mergedata, mergepath, strlen(mergepath), &dummy, sizeof(void *), NULL);
+				efree(mergepath);
+				zend_hash_move_forward_ex(Z_ARRVAL_P(return_value), &pos);
+			}
+		} else {
+			/* ignore problems here - other one may pick it up */
+			array_init(return_value);
+		}
+	} else {
+		/* we're skipping the template */
+		array_init(return_value);
 	}
 
 	/* replace the return value */

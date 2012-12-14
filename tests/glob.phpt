@@ -15,7 +15,12 @@ chdir($instance);
 $res = glob("txt/*.txt");
 sort($res);
 var_dump($res);
-
+$res = glob("templdir/*");
+var_dump($res);
+$res = glob("instdir/*");
+var_dump($res);
+$res = glob("cache/*");
+var_dump($res);
 ?>
 --EXPECT--
 array(3) {
@@ -34,3 +39,16 @@ array(3) {
   [2]=>
   string(13) "txt/tfile.txt"
 }
+array(1) {
+  [0]=>
+  string(14) "templdir/t.txt"
+}
+array(1) {
+  [0]=>
+  string(13) "instdir/t.txt"
+}
+array(1) {
+  [0]=>
+  string(15) "cache/cache.txt"
+}
+
