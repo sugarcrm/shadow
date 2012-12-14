@@ -131,7 +131,7 @@ zend_module_entry shadow_module_entry = {
 	PHP_RINIT(shadow),
 	PHP_RSHUTDOWN(shadow),
 	PHP_MINFO(shadow),
-	"0.3",
+	SHADOW_VERSION,
     PHP_MODULE_GLOBALS(shadow),
     PHP_GINIT(shadow),
     PHP_GSHUTDOWN(shadow),
@@ -279,6 +279,7 @@ PHP_MINFO_FUNCTION(shadow)
 {
 	php_info_print_table_start();
 	php_info_print_table_header(2, "shadow support", "enabled");
+	php_info_print_table_header(2, "shadow version", SHADOW_VERSION);
 	php_info_print_table_end();
 
 	DISPLAY_INI_ENTRIES();
@@ -541,7 +542,7 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 					newname = realpath?realpath:estrndup(filename, fnamelen);
 					realpath = NULL;
 				} else {
-					newname = NULL; 
+					newname = NULL;
 				}
 			}
 		} else {
@@ -1141,14 +1142,14 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	templname = erealloc(templname, templen+strlen(mask));
 	strcat(templname, mask);
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing merge: %s %s\n", instname, templname);
-	
+
 	/* call with template */
 	if(shadow_call_replace_name(0, templname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU) != SUCCESS || Z_TYPE_P(return_value) != IS_ARRAY) {
 		efree(instname);
 		efree(templname);
 		return;
 	}
-	
+
 	ALLOC_HASHTABLE(mergedata);
 	zend_hash_init(mergedata, 10, NULL, NULL, 0);
 	/* cut off instname and put path part there */
@@ -1161,7 +1162,7 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 		efree(mergepath);
 		zend_hash_move_forward_ex(Z_ARRVAL_P(return_value), &pos);
 	}
-	
+
 	/* replace the return value */
 	templdata = return_value;
 	ALLOC_INIT_ZVAL(instdata);
@@ -1181,7 +1182,7 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	}
 	return_value = templdata;
 	zval_ptr_dtor(&instdata);
-	/* convert mergedata to return */	
+	/* convert mergedata to return */
 	zend_hash_clean(Z_ARRVAL_P(return_value));
 	zend_hash_internal_pointer_reset_ex(mergedata, &pos);
 	while(zend_hash_get_current_key_ex(mergedata, &filename, &filename_len, &num, 0, &pos) == HASH_KEY_IS_STRING) {
@@ -1192,7 +1193,7 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	zend_hash_destroy(mergedata);
 	efree(mergedata);
 	efree(instname);
-	efree(templname);	
+	efree(templname);
 }
 /* }}} */
 /*

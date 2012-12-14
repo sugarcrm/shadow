@@ -80,6 +80,8 @@ ZEND_END_MODULE_GLOBALS(shadow)
 #define SHADOW_G(v) (shadow_globals.v)
 #endif
 
+#define SHADOW_VERSION "0.4-dev"
+
 ZEND_EXTERN_MODULE_GLOBALS(shadow)
 
 #endif	/* PHP_SHADOW_H */
