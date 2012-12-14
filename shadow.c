@@ -1193,8 +1193,6 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	/* cleanup */
 	zend_hash_destroy(mergedata);
 	efree(mergedata);
-	efree(instname);
-	efree(templname);
 }
 /* }}} */
 /*
