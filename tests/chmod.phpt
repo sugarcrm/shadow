@@ -25,7 +25,7 @@ rmdir("$instance/txt/new");
 
 ?>
 --EXPECT--
-bool(false)
+bool(true)
 bool(true)
 Unshadow
 bool(false)

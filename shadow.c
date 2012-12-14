@@ -67,6 +67,7 @@ static void (*orig_chdir)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_fread)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_realpath)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_is_writable)(INTERNAL_FUNCTION_PARAMETERS);
+static void (*orig_glob)(INTERNAL_FUNCTION_PARAMETERS);
 
 static char *shadow_resolve_path(const char *filename, int filename_len TSRMLS_DC);
 static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filename, char *mode,
@@ -85,6 +86,7 @@ static void shadow_chdir(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_fread(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_is_writable(INTERNAL_FUNCTION_PARAMETERS);
+static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS);
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_shadow, 0, 0, 2)
 	ZEND_ARG_INFO(0, template)
@@ -209,7 +211,7 @@ PHP_MINIT_FUNCTION(shadow)
 	SHADOW_OVERRIDE(fread);
 	SHADOW_OVERRIDE(realpath);
 	SHADOW_OVERRIDE(is_writable);
-
+	SHADOW_OVERRIDE(glob);
 	return SUCCESS;
 }
 /* }}} */
@@ -488,6 +490,9 @@ static char *get_full_path(const char *filename TSRMLS_DC)
 /*
 Returns new instance path or NULL if template path is OK
 filename is relative to template root
+If check_exists is 2, the function will return instance path if passed instance path
+If check_exists is 1, the function will return NULL if passed instance path
+
 */
 static char *template_to_instance(const char *filename, int check_exists TSRMLS_DC)
 {
@@ -509,8 +514,9 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 	fnamelen = strlen(realpath);
 
 	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), filename, fnamelen)) {
+		if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "In template: %s\n", filename);
 		if(check_exists && shadow_cache_get(filename, &newname) == SUCCESS) {
-			if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK)	fprintf(stderr, "Path check from cache: %s => %s\n", filename, newname);
+			if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "Path check from cache: %s => %s\n", filename, newname);
 			return newname;
 		}
 		/* starts with template - rewrite to instance */
@@ -525,6 +531,7 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 		}
 		shadow_cache_put(filename, newname);
 	} else if(is_subdir_of(SHADOW_G(instance), SHADOW_G(instance_len), filename, fnamelen)) {
+		if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "In instance: %s\n", filename);
 		if(check_exists) {
 			/* starts with instance, may want to check template too */
 			if(!instance_only_subdir(filename+SHADOW_G(instance_len)+1 TSRMLS_CC) && VCWD_ACCESS(filename, F_OK) != 0) {
@@ -532,7 +539,12 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 				spprintf(&newname, MAXPATHLEN, "%s/%s", SHADOW_G(template), filename+SHADOW_G(instance_len)+1);
 			} else {
 				/* TODO: use realpath here too? */
-				newname = NULL;
+				if(check_exists == 2) {
+					newname = realpath?realpath:estrndup(filename, fnamelen);
+					realpath = NULL;
+				} else {
+					newname = NULL; 
+				}
 			}
 		} else {
 			/* use already resolved name if we are writing - this way we can use it for recursive mkdir */
@@ -725,7 +737,7 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, ch
 
 	if(options & STREAM_USE_GLOB_DIR_OPEN) {
 		/* not dealing with globs yet */
-		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening glob: %s\n", path);
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening glob dir: %s\n", path);
 		return plain_ops->dir_opener(wrapper, path, mode, options, opened_path, context STREAMS_CC TSRMLS_CC);
 	}
 	if(is_instance_only(path TSRMLS_CC)) {
@@ -848,6 +860,28 @@ static zval **shadow_get_arg(int arg TSRMLS_DC)
 	return (zval **)p;
 }
 
+/*
+ * Call original function while replacing name parameter with repname
+ */
+static int shadow_call_replace_name(int param, char *repname, void (*orig_func)(INTERNAL_FUNCTION_PARAMETERS), INTERNAL_FUNCTION_PARAMETERS)
+{
+	zval *old_name, *new_name;
+	zval **name;
+	name = shadow_get_arg(0 TSRMLS_CC);
+	if(!name || !*name) {
+		orig_func(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		return FAILURE;
+	}
+	old_name = *name;
+	ALLOC_INIT_ZVAL(new_name);
+	ZVAL_STRING(new_name, repname, param);
+	*name = new_name;
+	orig_func(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+	*name = old_name;
+	zval_ptr_dtor(&new_name);
+	return SUCCESS;
+}
+
 /* {{{ proto bool touch(string filename [, int time [, int atime]])
    Set modification time of file */
 static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS)
@@ -869,21 +903,8 @@ static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS)
 
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_TOUCH) fprintf(stderr, "Touching %s (%s)\n", filename, instname);
 	if(instname) {
-		zval **name;
-		zval *old_name, *new_name;
 		ensure_dir_exists(instname, &shadow_wrapper, NULL TSRMLS_CC);
-		name = shadow_get_arg(0 TSRMLS_CC);
-		if(!name || !*name) {
-			orig_touch(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-			return;
-		}
-		old_name = *name;
-		ALLOC_INIT_ZVAL(new_name);
-		ZVAL_STRING(new_name, instname, 0);
-		*name = new_name;
-		orig_touch(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-		*name = old_name;
-		zval_ptr_dtor(&new_name);
+		shadow_call_replace_name(0, instname, orig_touch, INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
 	orig_touch(INTERNAL_FUNCTION_PARAM_PASSTHRU);
@@ -913,20 +934,7 @@ static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS)
 	php_clear_stat_cache(0, NULL, 0 TSRMLS_CC);
 
 	if(instname) {
-		zval **name;
-		zval *old_name, *new_name;
-		name = shadow_get_arg(0 TSRMLS_CC);
-		if(!name || !*name) {
-			orig_chmod(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-			return;
-		}
-		old_name = *name;
-		ALLOC_INIT_ZVAL(new_name);
-		ZVAL_STRING(new_name, instname, 0);
-		*name = new_name;
-		orig_chmod(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-		*name = old_name;
-		zval_ptr_dtor(&new_name);
+		shadow_call_replace_name(0, instname, orig_chmod, INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
 
@@ -1012,20 +1020,7 @@ static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS)
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_RESOLVE) fprintf(stderr, "Realpath %s (%s)\n", filename, instname);
 
 	if(instname) {
-		zval **name;
-		zval *old_name, *new_name;
-		name = shadow_get_arg(0 TSRMLS_CC);
-		if(!name || !*name) {
-			orig_realpath(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-			return;
-		}
-		old_name = *name;
-		ALLOC_INIT_ZVAL(new_name);
-		ZVAL_STRING(new_name, instname, 0);
-		*name = new_name;
-		orig_realpath(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-		*name = old_name;
-		zval_ptr_dtor(&new_name);
+		shadow_call_replace_name(0, instname, orig_realpath, INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
 
@@ -1053,7 +1048,6 @@ static void shadow_is_writable(INTERNAL_FUNCTION_PARAMETERS)
 		return;
 	}
 
-
 	instname = template_to_instance(filename, 0 TSRMLS_CC);
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_STAT) fprintf(stderr, "is_writable %s (%s)\n", filename, instname);
 	if(!instname) {
@@ -1065,24 +1059,144 @@ static void shadow_is_writable(INTERNAL_FUNCTION_PARAMETERS)
 	ensure_dir_exists(instname, &shadow_wrapper, NULL TSRMLS_CC);
 	/* Check whether dir containing the file is writable */
 	zend_dirname(instname, strlen(instname));
-	name = shadow_get_arg(0 TSRMLS_CC);
-	if(!name || !*name) {
-		orig_is_writable(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-		return;
-	}
-	/* if it is not writable, we'll check the directory in case template file is not writable,
-	 * but we can write the same file into the instance
-	 */
-	old_name = *name;
-	ALLOC_INIT_ZVAL(new_name);
-	ZVAL_STRING(new_name, instname, 0);
-	*name = new_name;
-	orig_is_writable(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-	*name = old_name;
-	zval_ptr_dtor(&new_name);
+	shadow_call_replace_name(0, instname, orig_is_writable, INTERNAL_FUNCTION_PARAM_PASSTHRU);
 }
 /* }}} */
 
+/* {{{ proto array glob(string pattern [, int flags])
+   Find pathnames matching a pattern */
+static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
+{
+	char *filename = NULL;
+	int filename_len;
+	zval **name;
+	long flags;
+	char *instname=NULL, *templname=NULL, *mask=NULL, *path=NULL;
+	zval *instdata, *templdata;
+	zval **src_entry;
+	HashPosition pos;
+	HashTable *mergedata;
+	void *dummy = (void *)1;
+	int instlen, templen;
+	long num;
+
+	if(!SHADOW_ENABLED()) {
+		orig_glob(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		return;
+	}
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &filename, &filename_len, &flags) == FAILURE) {
+		return;
+	}
+
+	mask = strpbrk(filename, "*?[");
+	if(!mask) {
+		mask = filename+filename_len;
+	}
+	while(--mask > filename && *mask != '/'
+#ifdef PHP_WIN32
+		&& *mask != '\\'
+#endif
+		);
+	path = estrndup(filename, mask-filename);
+	/* path will be path part up to the directory containing first glob char */
+
+	if(is_instance_only(path TSRMLS_CC)) {
+		/* if it's instance-only dir, we won't merge in any case */
+		instname = template_to_instance(path, 0 TSRMLS_CC);
+		if(SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Glob instance only: %s (%s)\n", path, instname);
+		shadow_call_replace_name(0, instname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		efree(path);
+		return;
+	}
+
+	instname = template_to_instance(path, 2 TSRMLS_CC);
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Glob: %s (%s)\n", path, instname);
+	if(!instname) {
+		/* we don't have instance dir, don't bother with merging */
+		efree(path);
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing template: %s\n", path);
+		orig_glob(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		return;
+	} else if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), instname, strlen(instname))) {
+		/* We can get template dir here, if instance dir does not exist, we still have only one directory then */
+		efree(path);
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing template(2): %s\n", path);
+		shadow_call_replace_name(0, instname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		return;
+	}
+//	efree(path);
+	/* We got instance dir, does template dir exist too? */
+	spprintf(&templname, MAXPATHLEN, "%s/%s", SHADOW_G(template), instname+SHADOW_G(instance_len)+1);
+	if(VCWD_ACCESS(templname, F_OK) != 0) {
+		/* template part does not exist, no need to merge */
+		efree(templname);
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing instance: %s\n", path);
+		shadow_call_replace_name(0, instname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		return;
+	}
+	/* We have both, so we will have to merge */
+	instlen = strlen(instname)+1;
+	templen = strlen(templname)+1;
+	instname = erealloc(instname, instlen+strlen(mask));
+	strcat(instname, mask);
+	templname = erealloc(templname, templen+strlen(mask));
+	strcat(templname, mask);
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing merge: %s %s\n", instname, templname);
+	
+	/* call with template */
+	if(shadow_call_replace_name(0, templname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU) != SUCCESS || Z_TYPE_P(return_value) != IS_ARRAY) {
+		efree(instname);
+		efree(templname);
+		return;
+	}
+	
+	ALLOC_HASHTABLE(mergedata);
+	zend_hash_init(mergedata, 10, NULL, NULL, 0);
+	/* cut off instname and put path part there */
+	zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(return_value), &pos);
+	while (zend_hash_get_current_data_ex(Z_ARRVAL_P(return_value), (void **)&src_entry, &pos) == SUCCESS) {
+		char *mergepath;
+		if(Z_TYPE_PP(src_entry) != IS_STRING) continue; /* weird, glob shouldn't do that to us */
+		spprintf(&mergepath, MAXPATHLEN, "%s/%s", path, Z_STRVAL_PP(src_entry)+templen);
+		zend_hash_add(mergedata, mergepath, strlen(mergepath), &dummy, sizeof(void *), NULL);
+		efree(mergepath);
+		zend_hash_move_forward_ex(Z_ARRVAL_P(return_value), &pos);
+	}
+	
+	/* replace the return value */
+	templdata = return_value;
+	ALLOC_INIT_ZVAL(instdata);
+	return_value = instdata;
+	/* call with instance */
+	if(shadow_call_replace_name(0, instname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU) == SUCCESS && Z_TYPE_P(return_value) == IS_ARRAY) {
+		/* merge data */
+		zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(return_value), &pos);
+		while (zend_hash_get_current_data_ex(Z_ARRVAL_P(return_value), (void **)&src_entry, &pos) == SUCCESS) {
+			char *mergepath;
+			if(Z_TYPE_PP(src_entry) != IS_STRING) continue; /* weird, glob shouldn't do that to us */
+			spprintf(&mergepath, MAXPATHLEN, "%s/%s", path, Z_STRVAL_PP(src_entry)+instlen);
+			zend_hash_add(mergedata, mergepath, strlen(mergepath), &dummy, sizeof(void *), NULL);
+			efree(mergepath);
+			zend_hash_move_forward_ex(Z_ARRVAL_P(return_value), &pos);
+		}
+	}
+	return_value = templdata;
+	zval_ptr_dtor(&instdata);
+	/* convert mergedata to return */	
+	zend_hash_clean(Z_ARRVAL_P(return_value));
+	zend_hash_internal_pointer_reset_ex(mergedata, &pos);
+	while(zend_hash_get_current_key_ex(mergedata, &filename, &filename_len, &num, 0, &pos) == HASH_KEY_IS_STRING) {
+		add_next_index_stringl(return_value, filename, filename_len, 1);
+		zend_hash_move_forward_ex(mergedata, &pos);
+	}
+	/* cleanup */
+	zend_hash_destroy(mergedata);
+	efree(mergedata);
+	efree(instname);
+	efree(templname);	
+}
+/* }}} */
 /*
  * Local variables:
  * tab-width: 4
