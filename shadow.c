@@ -900,6 +900,16 @@ static int shadow_call_replace_name(int param, char *repname, void (*orig_func)(
 	return SUCCESS;
 }
 
+/*
+ * Check if this file belongs to us
+ */
+static int shadow_stream_check(char *filename TSRMLS_DC)
+{
+	php_stream_wrapper *wrapper;
+	wrapper = php_stream_locate_url_wrapper(filename, NULL, 0 TSRMLS_CC);
+	return wrapper == &php_plain_files_wrapper || wrapper == &shadow_wrapper;
+}
+
 /* {{{ proto bool touch(string filename [, int time [, int atime]])
    Set modification time of file */
 static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS)
@@ -915,6 +925,10 @@ static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS)
 	}
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|ll", &filename, &filename_len, &filetime, &fileatime) == FAILURE) {
+		return;
+	}
+	if(!stream_check(filename)) {
+		orig_touch(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
 	instname = template_to_instance(filename, 0 TSRMLS_CC);
@@ -943,6 +957,10 @@ static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS)
 	}
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &filename, &filename_len, &mode) == FAILURE) {
+		return;
+	}
+	if(!stream_check(filename)) {
+		orig_chmod(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
 	instname = template_to_instance(filename, OPT_CHECK_EXISTS TSRMLS_CC);
@@ -1033,6 +1051,10 @@ static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &filename, &filename_len) == FAILURE) {
 		return;
 	}
+	if(!stream_check(filename)) {
+		orig_realpath(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		return;
+	}
 	instname = template_to_instance(filename, OPT_SKIP_CACHE TSRMLS_CC);
 
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_RESOLVE) fprintf(stderr, "Realpath %s (%s)\n", filename, instname);
@@ -1065,6 +1087,10 @@ static void shadow_is_writable(INTERNAL_FUNCTION_PARAMETERS)
 	}
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &filename, &filename_len) == FAILURE) {
+		return;
+	}
+	if(!stream_check(filename)) {
+		orig_is_writable(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
 
@@ -1107,6 +1133,10 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	}
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &filename, &filename_len, &flags) == FAILURE) {
+		return;
+	}
+	if(!stream_check(filename)) {
+		orig_glob(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
 
