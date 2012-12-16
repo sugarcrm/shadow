@@ -528,7 +528,9 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 			}
 			/* drop down to return */
 		}
-		shadow_cache_put(filename, newname);
+		if(check_exists) {
+			shadow_cache_put(filename, newname);
+		}
 	} else if(is_subdir_of(SHADOW_G(instance), SHADOW_G(instance_len), filename, fnamelen)) {
 		if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "In instance: %s\n", filename);
 		if(check_exists) {
@@ -1020,7 +1022,9 @@ static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS)
 
 	if(instname) {
 		shadow_call_replace_name(0, instname, orig_realpath, INTERNAL_FUNCTION_PARAM_PASSTHRU);
-		return;
+		if(Z_TYPE_P(return_value) == IS_STRING) {
+			return;
+		}
 	}
 
 	orig_realpath(INTERNAL_FUNCTION_PARAM_PASSTHRU);
