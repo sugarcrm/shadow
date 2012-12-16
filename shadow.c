@@ -742,6 +742,7 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, ch
 	HashTable *mergedata;
 	php_stream_dirent entry;
 	void *dummy = (void *)1;
+	char *templname = NULL;
 
 	if(options & STREAM_USE_GLOB_DIR_OPEN) {
 		/* not dealing with globs yet */
@@ -756,7 +757,7 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, ch
 		efree(instname);
 		return instdir;
 	}
-	instname = template_to_instance(path, OPT_CHECK_EXISTS TSRMLS_CC);
+	instname = template_to_instance(path, OPT_CHECK_EXISTS|OPT_RETURN_INSTANCE TSRMLS_CC);
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opendir: %s (%s)\n", path, instname);
 	if(!instname) {
 		/* we don't have instance dir, don't bother with merging */
@@ -771,11 +772,15 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, ch
 		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening template w/o instance: %s\n", path);
 		return plain_ops->dir_opener(wrapper, path, mode, options, opened_path, context STREAMS_CC TSRMLS_CC);
 	}
-	tempdir = plain_ops->dir_opener(wrapper, path, mode, options&(~REPORT_ERRORS), opened_path, context STREAMS_CC TSRMLS_CC);
+
+	spprintf(&templname, MAXPATHLEN, "%s/%s", SHADOW_G(template), instname+SHADOW_G(instance_len)+1);
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening templdir: %s\n", templname);
+	tempdir = plain_ops->dir_opener(wrapper, templname, mode, options&(~REPORT_ERRORS), opened_path, context STREAMS_CC TSRMLS_CC);
 	if(!tempdir) {
 		/* template dir failed, return just instance */
 		return instdir;
 	}
+	efree(templname);
 	/* now we have both dirs, so we need to create a merge dir */
 	/* TODO: figure out why we need these flags */
 	instdir->flags |= PHP_STREAM_FLAG_NO_BUFFER;
