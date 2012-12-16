@@ -766,21 +766,22 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, ch
 	}
 
 	instdir = plain_ops->dir_opener(wrapper, instname, mode, options&(~REPORT_ERRORS), opened_path, context STREAMS_CC TSRMLS_CC);
-	efree(instname);
 	if(!instdir) {
 		/* instance dir failed, return just template one */
 		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening template w/o instance: %s\n", path);
+		efree(instname);
 		return plain_ops->dir_opener(wrapper, path, mode, options, opened_path, context STREAMS_CC TSRMLS_CC);
 	}
 
 	spprintf(&templname, MAXPATHLEN, "%s/%s", SHADOW_G(template), instname+SHADOW_G(instance_len)+1);
+	efree(instname);
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening templdir: %s\n", templname);
 	tempdir = plain_ops->dir_opener(wrapper, templname, mode, options&(~REPORT_ERRORS), opened_path, context STREAMS_CC TSRMLS_CC);
+	efree(templname);
 	if(!tempdir) {
 		/* template dir failed, return just instance */
 		return instdir;
 	}
-	efree(templname);
 	/* now we have both dirs, so we need to create a merge dir */
 	/* TODO: figure out why we need these flags */
 	instdir->flags |= PHP_STREAM_FLAG_NO_BUFFER;
