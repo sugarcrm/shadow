@@ -486,14 +486,18 @@ static char *get_full_path(const char *filename TSRMLS_DC)
 	return estrndup(new_state.cwd, new_state.cwd_length);
 }
 
+/* check if file exists */
+#define OPT_CHECK_EXISTS 	1
+/* do not cache resolution result */
+#define OPT_SKIP_CACHE 		2
+/* if given instance path, return realpath */
+#define OPT_RETURN_INSTANCE 4
+
 /*
 Returns new instance path or NULL if template path is OK
 filename is relative to template root
-If check_exists is 2, the function will return instance path if passed instance path
-If check_exists is 1, the function will return NULL if passed instance path
-
 */
-static char *template_to_instance(const char *filename, int check_exists TSRMLS_DC)
+static char *template_to_instance(const char *filename, int options TSRMLS_DC)
 {
 	char *realpath = NULL;
 	int fnamelen = strlen(filename);
@@ -514,13 +518,13 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 
 	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), filename, fnamelen)) {
 		if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "In template: %s\n", filename);
-		if(check_exists && shadow_cache_get(filename, &newname) == SUCCESS) {
+		if((options & OPT_CHECK_EXISTS) && shadow_cache_get(filename, &newname) == SUCCESS) {
 			if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "Path check from cache: %s => %s\n", filename, newname);
 			return newname;
 		}
 		/* starts with template - rewrite to instance */
 		spprintf(&newname, MAXPATHLEN, "%s/%s", SHADOW_G(instance), filename+SHADOW_G(template_len)+1);
-		if(check_exists && !instance_only_subdir(filename+SHADOW_G(template_len)+1 TSRMLS_CC)) {
+		if((options & OPT_CHECK_EXISTS) && !instance_only_subdir(filename+SHADOW_G(template_len)+1 TSRMLS_CC)) {
 			if(VCWD_ACCESS(newname, F_OK) != 0) {
 				/* file does not exist */
 				efree(newname);
@@ -528,19 +532,19 @@ static char *template_to_instance(const char *filename, int check_exists TSRMLS_
 			}
 			/* drop down to return */
 		}
-		if(check_exists) {
+		if(!(options & OPT_SKIP_CACHE)) {
 			shadow_cache_put(filename, newname);
 		}
 	} else if(is_subdir_of(SHADOW_G(instance), SHADOW_G(instance_len), filename, fnamelen)) {
 		if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "In instance: %s\n", filename);
-		if(check_exists) {
+		if((options & OPT_CHECK_EXISTS)) {
 			/* starts with instance, may want to check template too */
 			if(!instance_only_subdir(filename+SHADOW_G(instance_len)+1 TSRMLS_CC) && VCWD_ACCESS(filename, F_OK) != 0) {
 				/* does not exist, go to template */
 				spprintf(&newname, MAXPATHLEN, "%s/%s", SHADOW_G(template), filename+SHADOW_G(instance_len)+1);
 			} else {
 				/* TODO: use realpath here too? */
-				if(check_exists == 2) {
+				if((options & OPT_RETURN_INSTANCE)) {
 					newname = realpath?realpath:estrndup(filename, fnamelen);
 					realpath = NULL;
 				} else {
@@ -607,7 +611,7 @@ static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filen
 			}
 		} else {
 			// reading
-			char *instname = template_to_instance(filename, 1 TSRMLS_CC);
+			char *instname = template_to_instance(filename, OPT_CHECK_EXISTS TSRMLS_CC);
 			if(instname) {
 				if(SHADOW_G(debug) & SHADOW_DEBUG_OPEN) fprintf(stderr, "Opening instead: %s %s\n", instname, mode);
 		 		res = plain_ops->stream_opener(wrapper, instname, mode, options|STREAM_ASSUME_REALPATH, opened_path, context STREAMS_CC TSRMLS_CC);
@@ -636,7 +640,7 @@ static void adjust_stat(php_stream_statbuf *ssb)
 
 static int shadow_stat(php_stream_wrapper *wrapper, char *url, int flags, php_stream_statbuf *ssb, php_stream_context *context TSRMLS_DC)
 {
-	char *instname = template_to_instance(url, 1 TSRMLS_CC);
+	char *instname = template_to_instance(url, OPT_CHECK_EXISTS TSRMLS_CC);
 	int res;
 	if(SHADOW_ENABLED()) {
 		if(SHADOW_G(debug) & SHADOW_DEBUG_STAT)  fprintf(stderr, "Stat: %s (%s) %d\n", url, instname, flags);
@@ -658,6 +662,7 @@ static int shadow_unlink(php_stream_wrapper *wrapper, char *url, int options, ph
 	char *instname = template_to_instance(url, 0 TSRMLS_CC);
 	int res;
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_UNLINK) fprintf(stderr, "Unlink: %s (%s) %d\n", url, instname, options);
+	shadow_cache_remove(url);
 	if(instname) {
 		url = instname;
 	}
@@ -670,10 +675,11 @@ static int shadow_unlink(php_stream_wrapper *wrapper, char *url, int options, ph
 
 static int shadow_rename(php_stream_wrapper *wrapper, char *url_from, char *url_to, int options, php_stream_context *context TSRMLS_DC)
 {
-	char *fromname = template_to_instance(url_from, 1 TSRMLS_CC);
+	char *fromname = template_to_instance(url_from, OPT_CHECK_EXISTS TSRMLS_CC);
 	char *toname = template_to_instance(url_to, 0 TSRMLS_CC);
 	int res;
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_RENAME) fprintf(stderr, "Rename: %s(%s) -> %s(%s) %d\n", url_from, fromname, url_to, toname, options);
+	shadow_cache_remove(url_from);
 	if(fromname) {
 		url_from = fromname;
 	}
@@ -718,6 +724,7 @@ static int shadow_rmdir(php_stream_wrapper *wrapper, char *url, int options, php
 	char *instname = template_to_instance(url, 0 TSRMLS_CC);
 	int res;
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_MKDIR) fprintf(stderr, "Rmdir: %s (%s) %d\n", url, instname, options);
+	shadow_cache_remove(url);
 	if(instname) {
 		url = instname;
 	}
@@ -749,7 +756,7 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, ch
 		efree(instname);
 		return instdir;
 	}
-	instname = template_to_instance(path, 1 TSRMLS_CC);
+	instname = template_to_instance(path, OPT_CHECK_EXISTS TSRMLS_CC);
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opendir: %s (%s)\n", path, instname);
 	if(!instname) {
 		/* we don't have instance dir, don't bother with merging */
@@ -928,7 +935,7 @@ static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &filename, &filename_len, &mode) == FAILURE) {
 		return;
 	}
-	instname = template_to_instance(filename, 1 TSRMLS_CC);
+	instname = template_to_instance(filename, OPT_CHECK_EXISTS TSRMLS_CC);
 
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_CHMOD) fprintf(stderr, "Chmod %s (%s) %lo\n", filename, instname, mode);
 	/* Clear cache because PHP caches non-plain-file stats */
@@ -1016,7 +1023,7 @@ static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &filename, &filename_len) == FAILURE) {
 		return;
 	}
-	instname = template_to_instance(filename, 0 TSRMLS_CC);
+	instname = template_to_instance(filename, OPT_SKIP_CACHE TSRMLS_CC);
 
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_RESOLVE) fprintf(stderr, "Realpath %s (%s)\n", filename, instname);
 
@@ -1051,7 +1058,7 @@ static void shadow_is_writable(INTERNAL_FUNCTION_PARAMETERS)
 		return;
 	}
 
-	instname = template_to_instance(filename, 0 TSRMLS_CC);
+	instname = template_to_instance(filename, OPT_SKIP_CACHE TSRMLS_CC);
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_STAT) fprintf(stderr, "is_writable %s (%s)\n", filename, instname);
 	if(!instname) {
 		/* Didn't find anything - use original handler */
@@ -1111,7 +1118,7 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 		skip_template = 1;
 		if(SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Glob instance only: %s (%s)\n", path, instname);
 	} else {
-		instname = template_to_instance(path, 2 TSRMLS_CC);
+		instname = template_to_instance(path, OPT_CHECK_EXISTS|OPT_RETURN_INSTANCE TSRMLS_CC);
 		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Glob: %s => %s (%s)\n", filename, path, instname);
 		if(!instname) {
 			/* we don't have instance dir, don't bother with merging */
