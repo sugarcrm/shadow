@@ -1,9 +1,9 @@
 <?php
-$template = "template";
+$template = "templatedir";
 $instance = "instance";
 
 set_include_path(
-	get_include_path().PATH_SEPARATOR.dirname(__FILE__)."/template"
+	get_include_path().PATH_SEPARATOR.dirname(__FILE__)."/templatedir"
 );
 chdir(dirname(__FILE__));
 

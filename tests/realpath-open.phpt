@@ -10,5 +10,5 @@ file_get_contents("$template/template_only.php");
 echo "OK\n";
 ?>
 --EXPECTF--
-string(%d) "%s/template/template_only.php"
+string(%d) "%s/templatedir/template_only.php"
 OK

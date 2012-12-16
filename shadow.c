@@ -738,7 +738,7 @@ static int shadow_rmdir(php_stream_wrapper *wrapper, char *url, int options, php
 static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, char *mode, int options, char **opened_path, php_stream_context *context STREAMS_DC TSRMLS_DC)
 {
 	char *instname;
-	php_stream *tempdir, *instdir, *mergestream;
+	php_stream *tempdir = NULL, *instdir, *mergestream;
 	HashTable *mergedata;
 	php_stream_dirent entry;
 	void *dummy = (void *)1;
@@ -773,11 +773,15 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, char *path, ch
 		return plain_ops->dir_opener(wrapper, path, mode, options, opened_path, context STREAMS_CC TSRMLS_CC);
 	}
 
-	spprintf(&templname, MAXPATHLEN, "%s/%s", SHADOW_G(template), instname+SHADOW_G(instance_len)+1);
+	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), instname, strlen(instname))) {
+		/* instname is in a template, we don't need another template name */
+	} else {
+		spprintf(&templname, MAXPATHLEN, "%s/%s", SHADOW_G(template), instname+SHADOW_G(instance_len)+1);
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening templdir: %s\n", templname);
+		tempdir = plain_ops->dir_opener(wrapper, templname, mode, options&(~REPORT_ERRORS), opened_path, context STREAMS_CC TSRMLS_CC);
+		efree(templname);
+	}
 	efree(instname);
-	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening templdir: %s\n", templname);
-	tempdir = plain_ops->dir_opener(wrapper, templname, mode, options&(~REPORT_ERRORS), opened_path, context STREAMS_CC TSRMLS_CC);
-	efree(templname);
 	if(!tempdir) {
 		/* template dir failed, return just instance */
 		return instdir;

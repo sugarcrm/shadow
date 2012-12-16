@@ -10,7 +10,7 @@ var_dump(shadow_get_config());
 --EXPECTF--
 array(3) {
   ["template"]=>
-  string(%d) "%s/template"
+  string(%d) "%s/templatedir"
   ["instance"]=>
   string(%d) "%s/instance"
   ["instance_only"]=>
