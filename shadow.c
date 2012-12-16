@@ -927,7 +927,7 @@ static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|ll", &filename, &filename_len, &filetime, &fileatime) == FAILURE) {
 		return;
 	}
-	if(!stream_check(filename)) {
+	if(!shadow_stream_check(filename)) {
 		orig_touch(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
@@ -959,7 +959,7 @@ static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &filename, &filename_len, &mode) == FAILURE) {
 		return;
 	}
-	if(!stream_check(filename)) {
+	if(!shadow_stream_check(filename)) {
 		orig_chmod(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
@@ -1051,7 +1051,7 @@ static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &filename, &filename_len) == FAILURE) {
 		return;
 	}
-	if(!stream_check(filename)) {
+	if(!shadow_stream_check(filename)) {
 		orig_realpath(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
@@ -1089,7 +1089,7 @@ static void shadow_is_writable(INTERNAL_FUNCTION_PARAMETERS)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &filename, &filename_len) == FAILURE) {
 		return;
 	}
-	if(!stream_check(filename)) {
+	if(!shadow_stream_check(filename)) {
 		orig_is_writable(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
@@ -1135,7 +1135,7 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &filename, &filename_len, &flags) == FAILURE) {
 		return;
 	}
-	if(!stream_check(filename)) {
+	if(!shadow_stream_check(filename)) {
 		orig_glob(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
