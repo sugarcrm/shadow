@@ -178,8 +178,21 @@ static void shadow_override_function(char *fname, int fname_len, int argno, int 
 {
 	zend_function *orig;
 	shadow_function override;
+	HashTable *table = CG(function_table);
+	char *col;
 
-	if (zend_hash_find(CG(function_table), fname, fname_len+1, (void **)&orig) != SUCCESS) {
+	if((col = strchr(fname, ':')) != NULL) {
+		zend_class_entry *cls;
+		*col = '\0';
+		if(zend_hash_find(CG(class_table), fname, col-fname+1, (void **)cls) != SUCCESS) {
+			return;
+		}
+		table = &(cls->function_table);
+		fname = col+2;
+		fname_len = strlen(fname);
+	}
+
+	if (zend_hash_find(table, fname, fname_len+1, (void **)&orig) != SUCCESS) {
 		return;
 	}
 	memcpy(&override, orig, sizeof(zend_function));
@@ -752,7 +765,7 @@ static int shadow_rename(php_stream_wrapper *wrapper, char *url_from, char *url_
 	int res;
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_RENAME) fprintf(stderr, "Rename: %s(%s) -> %s(%s) %d\n", url_from, fromname, url_to, toname, options);
 	if(SHADOW_ENABLED()) {
-		shadow_cache_remove(fromname);
+		shadow_cache_remove(url_from);
 	}
 	if(fromname) {
 		url_from = fromname;
