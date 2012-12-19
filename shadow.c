@@ -30,6 +30,13 @@
 
 ZEND_DECLARE_MODULE_GLOBALS(shadow)
 
+typedef struct _shadow_function {
+	zend_function original;
+	void (*orig_handler)(INTERNAL_FUNCTION_PARAMETERS);
+	int argno;
+	int argtype;
+} shadow_function;
+
 PHP_FUNCTION(shadow);
 PHP_FUNCTION(shadow_get_config);
 PHP_FUNCTION(shadow_clear_cache);
@@ -85,6 +92,7 @@ static void shadow_fread(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_is_writable(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS);
+static void shadow_generic_override(INTERNAL_FUNCTION_PARAMETERS);
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_shadow, 0, 0, 2)
 	ZEND_ARG_INFO(0, template)
@@ -151,6 +159,7 @@ PHP_INI_BEGIN()
     STD_PHP_INI_ENTRY("shadow.mkdir_mask",      "0755", PHP_INI_ALL, OnUpdateLong, mkdir_mask, zend_shadow_globals, shadow_globals)
     STD_PHP_INI_ENTRY("shadow.debug",      "0", PHP_INI_ALL, OnUpdateLong, debug, zend_shadow_globals, shadow_globals)
     STD_PHP_INI_ENTRY("shadow.cache_size",      "10000", PHP_INI_ALL, OnUpdateLong, cache_size, zend_shadow_globals, shadow_globals)
+    STD_PHP_INI_ENTRY("shadow.override",      "", PHP_INI_SYSTEM, OnUpdateString, override, zend_shadow_globals, shadow_globals)
 PHP_INI_END()
 /* }}} */
 
@@ -164,6 +173,22 @@ PHP_INI_END()
 	}
 
 #define SHADOW_ENABLED() (SHADOW_G(enabled) != 0 && SHADOW_G(instance) != NULL && SHADOW_G(template) != NULL)
+
+static void shadow_override_function(char *fname, int fname_len, int argno, int argtype)
+{
+	zend_function *orig;
+	shadow_function override;
+
+	if (zend_hash_find(CG(function_table), fname, fname_len+1, (void **)&orig) != SUCCESS) {
+		return;
+	}
+	memcpy(&override, orig, sizeof(zend_function));
+	override.orig_handler = orig->internal_function.handler;
+	override.original.internal_function.handler = shadow_generic_override;
+	override.argno = argno;
+	override.argtype = argtype;
+	zend_hash_update(CG(function_table), fname, fname_len+1, &override, sizeof(shadow_function), NULL);
+}
 
 /* {{{ PHP_MINIT_FUNCTION
  */
@@ -186,6 +211,7 @@ PHP_MINIT_FUNCTION(shadow)
 	SHADOW_CONSTANT(SHADOW_DEBUG_FAIL);
 	SHADOW_CONSTANT(SHADOW_DEBUG_TOUCH);
 	SHADOW_CONSTANT(SHADOW_DEBUG_CHMOD);
+	SHADOW_CONSTANT(SHADOW_DEBUG_OVERRIDE);
 
 	plain_ops = php_plain_files_wrapper.wops;
 
@@ -210,6 +236,50 @@ PHP_MINIT_FUNCTION(shadow)
 	SHADOW_OVERRIDE(realpath);
 	SHADOW_OVERRIDE(is_writable);
 	SHADOW_OVERRIDE(glob);
+
+	/* Override functions. Config format:
+	 * shadow.override=func1,func2@w1,func2,class::func4
+	 */
+	if(SHADOW_G(enabled) && SHADOW_G(override) && SHADOW_G(override)[0] != '\0') {
+		char *over = SHADOW_G(override);
+		int over_len;
+		char c;
+		int argno;
+		int argtype;
+		while(*over) {
+			char *next = strchr(over, ',');
+			if(!next) {
+				next = over+strlen(over);
+			}
+			for(over_len=0;over_len<next-over;over_len++) {
+				/* find @ or , */
+				if(over[over_len] == '@' || over[over_len] == ',' || over[over_len] =='\0') break;
+			}
+			argno = 0;
+			argtype = 0;
+			if(over[over_len] == '@') {
+				if(!isdigit(over[over_len+1])) {
+					if(over[over_len+1] == 'w') {
+						argtype = 1;
+					}
+					argno = atoi(over+over_len+2);
+				} else {
+					argno = atoi(over+over_len+1);
+				}
+			}
+			c = over[over_len];
+			over[over_len] = '\0';
+			shadow_override_function(over, over_len, argno, argtype);
+			over[over_len] = c;
+			if(*next) {
+				over = next+1;
+			} else {
+				break;
+			}
+		}
+
+	}
+
 	return SUCCESS;
 }
 /* }}} */
@@ -662,7 +732,9 @@ static int shadow_unlink(php_stream_wrapper *wrapper, char *url, int options, ph
 	char *instname = template_to_instance(url, 0 TSRMLS_CC);
 	int res;
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_UNLINK) fprintf(stderr, "Unlink: %s (%s) %d\n", url, instname, options);
-	shadow_cache_remove(url);
+	if(SHADOW_ENABLED()) {
+		shadow_cache_remove(url);
+	}
 	if(instname) {
 		url = instname;
 	}
@@ -679,7 +751,9 @@ static int shadow_rename(php_stream_wrapper *wrapper, char *url_from, char *url_
 	char *toname = template_to_instance(url_to, 0 TSRMLS_CC);
 	int res;
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_RENAME) fprintf(stderr, "Rename: %s(%s) -> %s(%s) %d\n", url_from, fromname, url_to, toname, options);
-	shadow_cache_remove(url_from);
+	if(SHADOW_ENABLED()) {
+		shadow_cache_remove(fromname);
+	}
 	if(fromname) {
 		url_from = fromname;
 	}
@@ -724,7 +798,9 @@ static int shadow_rmdir(php_stream_wrapper *wrapper, char *url, int options, php
 	char *instname = template_to_instance(url, 0 TSRMLS_CC);
 	int res;
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_MKDIR) fprintf(stderr, "Rmdir: %s (%s) %d\n", url, instname, options);
-	shadow_cache_remove(url);
+	if(SHADOW_ENABLED()) {
+		shadow_cache_remove(url);
+	}
 	if(instname) {
 		url = instname;
 	}
@@ -885,14 +961,14 @@ static int shadow_call_replace_name(int param, char *repname, void (*orig_func)(
 {
 	zval *old_name, *new_name;
 	zval **name;
-	name = shadow_get_arg(0 TSRMLS_CC);
+	name = shadow_get_arg(param TSRMLS_CC);
 	if(!name || !*name) {
 		orig_func(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return FAILURE;
 	}
 	old_name = *name;
 	ALLOC_INIT_ZVAL(new_name);
-	ZVAL_STRING(new_name, repname, param);
+	ZVAL_STRING(new_name, repname, 0);
 	*name = new_name;
 	orig_func(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 	*name = old_name;
@@ -1259,6 +1335,51 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	efree(mergedata);
 }
 /* }}} */
+
+static void shadow_generic_override(INTERNAL_FUNCTION_PARAMETERS)
+{
+	shadow_function *func = (shadow_function *)EG(current_execute_data)->function_state.function;
+	zval *old_name, *new_name;
+	zval **name;
+	int opts = OPT_CHECK_EXISTS|OPT_RETURN_INSTANCE;
+	char *instname;
+
+	if(!SHADOW_ENABLED()) {
+		func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		return;
+	}
+
+	name = shadow_get_arg(func->argno TSRMLS_CC);
+	if(!name || !*name || Z_TYPE_PP(name) != IS_STRING) {
+		func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		return;
+	}
+	/* not our path - don't mess with it */
+	if(!shadow_stream_check(Z_STRVAL_PP(name))) {
+		func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		return;
+	}
+	/* try to translate */
+	if(func->argtype != 0) {
+		/* for write */
+		opts = OPT_RETURN_INSTANCE;
+	}
+	instname = template_to_instance(Z_STRVAL_PP(name), opts TSRMLS_CC);
+	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OVERRIDE) fprintf(stderr, "Overriding %s: %s (%s)\n", func->original.internal_function.function_name, Z_STRVAL_PP(name), instname);
+	/* we didn't find better name, use original */
+	if(!instname) {
+		func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		return;
+	}
+	old_name = *name;
+	ALLOC_INIT_ZVAL(new_name);
+	ZVAL_STRING(new_name, instname, 0);
+	*name = new_name;
+	func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+	*name = old_name;
+	zval_ptr_dtor(&new_name);
+}
+
 /*
  * Local variables:
  * tab-width: 4

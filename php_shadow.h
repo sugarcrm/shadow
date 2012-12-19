@@ -55,6 +55,7 @@ PHP_MINFO_FUNCTION(shadow);
 #define SHADOW_DEBUG_FAIL		(1<<10)
 #define SHADOW_DEBUG_TOUCH		(1<<11)
 #define SHADOW_DEBUG_CHMOD		(1<<11)
+#define SHADOW_DEBUG_OVERRIDE	(1<<12)
 
 ZEND_BEGIN_MODULE_GLOBALS(shadow)
 	/* config vars */
@@ -62,6 +63,7 @@ ZEND_BEGIN_MODULE_GLOBALS(shadow)
 	long mkdir_mask;
 	long debug;
 	unsigned long cache_size;
+	char *override;
 	/* runtime data */
 	char *template;
 	char *instance;
@@ -80,7 +82,7 @@ ZEND_END_MODULE_GLOBALS(shadow)
 #define SHADOW_G(v) (shadow_globals.v)
 #endif
 
-#define SHADOW_VERSION "0.3.4"
+#define SHADOW_VERSION "0.3.5"
 
 ZEND_EXTERN_MODULE_GLOBALS(shadow)
 
