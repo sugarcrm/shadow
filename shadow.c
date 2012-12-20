@@ -648,6 +648,23 @@ static char *template_to_instance(const char *filename, int options TSRMLS_DC)
 	return newname;
 }
 
+static void clean_cache_dir(char *clean_dirname TSRMLS_DC)
+{
+	int len = strlen(clean_dirname);
+	char *dirname = estrndup(clean_dirname, len);
+	if(!is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), dirname, len)) {
+		return;
+	}
+	shadow_cache_remove(dirname);
+	while(len > SHADOW_G(template_len)) {
+		char c;
+		while(len > SHADOW_G(template_len) && !IS_SLASH(dirname[len])) len--;
+		dirname[len] = '\0';
+		shadow_cache_remove(dirname);
+	}
+	efree(dirname);
+}
+
 static void ensure_dir_exists(char *pathname, php_stream_wrapper *wrapper, php_stream_context *context TSRMLS_DC)
 {
 	int dir_len;
@@ -659,6 +676,7 @@ static void ensure_dir_exists(char *pathname, php_stream_wrapper *wrapper, php_s
 		/* does not exist */
 		if(SHADOW_G(debug) & SHADOW_DEBUG_ENSURE)	 fprintf(stderr, "Creating: %s %ld\n", pathname, SHADOW_G(mkdir_mask));
 		plain_ops->stream_mkdir(wrapper, pathname, SHADOW_G(mkdir_mask), PHP_STREAM_MKDIR_RECURSIVE|REPORT_ERRORS, context TSRMLS_CC);
+		clean_cache_dir(pathname);
 	}
 	pathname[dir_len] = '/'; /* restore full path */
 }
@@ -797,6 +815,7 @@ static int shadow_mkdir(php_stream_wrapper *wrapper, char *dir, int mode, int op
 	}
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_MKDIR)  fprintf(stderr, "Mkdir: %s (%s) %d %d\n", dir, instname, mode, options);
 	res = plain_ops->stream_mkdir(wrapper, dir, mode, options, context TSRMLS_CC);
+	clean_cache_dir(dir);
 	if(SHADOW_ENABLED() && !res && (SHADOW_G(debug) & SHADOW_DEBUG_FAIL)) {
 		fprintf(stderr, "Mkdir FAIL: %s %d %d [%d]\n", dir, mode, options, errno);
 	}
@@ -1233,11 +1252,7 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	if(!mask) {
 		mask = filename+filename_len;
 	}
-	while(--mask > filename && *mask != '/'
-#ifdef PHP_WIN32
-		&& *mask != '\\'
-#endif
-		);
+	while(--mask > filename && !IS_SLASH(*mask)); /* look up for slash */
 	path = estrndup(filename, mask-filename);
 	/* path will be path part up to the directory containing first glob char */
 
