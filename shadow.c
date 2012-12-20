@@ -651,8 +651,12 @@ static char *template_to_instance(const char *filename, int options TSRMLS_DC)
 static void clean_cache_dir(char *clean_dirname TSRMLS_DC)
 {
 	int len = strlen(clean_dirname);
-	char *dirname = estrndup(clean_dirname, len);
-	if(!is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), dirname, len)) {
+	char *dirname = NULL;
+	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), clean_dirname, len)) {
+		dirname = estrndup(clean_dirname, len);
+	} else if(is_subdir_of(SHADOW_G(instance), SHADOW_G(instance_len), clean_dirname, len)) {
+		spprintf(&dirname, MAXPATHLEN, "%s/%s", SHADOW_G(template), clean_dirname+SHADOW_G(instance_len)+1);
+	} else {
 		return;
 	}
 	shadow_cache_remove(dirname);
