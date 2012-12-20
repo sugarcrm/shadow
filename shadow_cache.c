@@ -77,7 +77,7 @@ void shadow_cache_remove(const char *name TSRMLS_DC)
 	char *segname;
 	int namelen;
 	namelen = shadow_cache_segmented_name(&segname, name TSRMLS_CC);
-	zend_hash_del(&SHADOW_G(cache), name, namelen+1);
+	zend_hash_del(&SHADOW_G(cache), segname, namelen+1);
 	efree(segname);
 }
 
