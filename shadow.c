@@ -656,6 +656,7 @@ static void clean_cache_dir(char *clean_dirname TSRMLS_DC)
 		dirname = estrndup(clean_dirname, len);
 	} else if(is_subdir_of(SHADOW_G(instance), SHADOW_G(instance_len), clean_dirname, len)) {
 		spprintf(&dirname, MAXPATHLEN, "%s/%s", SHADOW_G(template), clean_dirname+SHADOW_G(instance_len)+1);
+		len = strlen(dirname);
 	} else {
 		return;
 	}
