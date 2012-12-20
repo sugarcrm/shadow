@@ -663,6 +663,8 @@ static void clean_cache_dir(char *clean_dirname TSRMLS_DC)
 	while(len > SHADOW_G(template_len)) {
 		char c;
 		while(len > SHADOW_G(template_len) && !IS_SLASH(dirname[len])) len--;
+		dirname[len+1] = '\0';
+		shadow_cache_remove(dirname);
 		dirname[len] = '\0';
 		shadow_cache_remove(dirname);
 	}
