@@ -667,6 +667,7 @@ static void clean_cache_dir(char *clean_dirname TSRMLS_DC)
 		shadow_cache_remove(dirname);
 		dirname[len] = '\0';
 		shadow_cache_remove(dirname);
+		len--;
 	}
 	efree(dirname);
 }
