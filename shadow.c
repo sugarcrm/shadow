@@ -1304,7 +1304,12 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	}
 #endif
 	/* We got instance dir, does template dir exist too? */
-	spprintf(&templname, MAXPATHLEN, "%s/%s", SHADOW_G(template), instname+SHADOW_G(instance_len)+1);
+	if(!skip_template) {
+		templname = instance_to_template(instname, instlen TSRMLS_CC);
+		if(!templname) {
+			skip_template = 1;
+		}
+	}
 	instname = erealloc(instname, instlen+strlen(mask)+1);
 	strcat(instname, mask);
 #if 0
@@ -1323,7 +1328,7 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	ALLOC_HASHTABLE(mergedata);
 	zend_hash_init(mergedata, 10, NULL, NULL, 0);
 
-	if(!skip_template) {
+	if(!skip_template && templname != NULL) {
 		templen = strlen(templname);
 		templname = erealloc(templname, templen+strlen(mask)+1);
 		strcat(templname, mask);
