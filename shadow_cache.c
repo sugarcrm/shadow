@@ -49,7 +49,7 @@ int shadow_cache_get(const char *name, char **entry TSRMLS_DC)
 	int namelen;
 	char *centry;
 	if(SHADOW_G(cache_size) == 0) {
-		return NULL;
+		return FAILURE;
 	}
 	namelen = shadow_cache_segmented_name(&segname, name TSRMLS_CC);
 	if(zend_hash_find(&SHADOW_G(cache), segname, namelen+1, (void **)&centry) == SUCCESS) {
