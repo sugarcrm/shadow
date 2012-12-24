@@ -569,6 +569,17 @@ static char *get_full_path(const char *filename TSRMLS_DC)
 	return estrndup(new_state.cwd, new_state.cwd_length);
 }
 
+static inline char *instance_to_template(const char *instname, int len TSRMLS_DC)
+{
+	char *newname = NULL;
+	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), instname, len)) {
+		newname = estrndup(instname, len);
+	} else if(is_subdir_of(SHADOW_G(instance), SHADOW_G(instance_len), instname, len)) {
+		spprintf(&newname, MAXPATHLEN, "%s/%s", SHADOW_G(template), instname+SHADOW_G(instance_len)+1);
+	}
+	return newname;
+}
+
 /* check if file exists */
 #define OPT_CHECK_EXISTS 	1
 /* do not cache resolution result */
@@ -651,19 +662,14 @@ static char *template_to_instance(const char *filename, int options TSRMLS_DC)
 static void clean_cache_dir(char *clean_dirname TSRMLS_DC)
 {
 	int len = strlen(clean_dirname);
-	char *dirname = NULL;
-	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), clean_dirname, len)) {
-		dirname = estrndup(clean_dirname, len);
-	} else if(is_subdir_of(SHADOW_G(instance), SHADOW_G(instance_len), clean_dirname, len)) {
-		spprintf(&dirname, MAXPATHLEN, "%s/%s", SHADOW_G(template), clean_dirname+SHADOW_G(instance_len)+1);
-		len = strlen(dirname);
-	} else {
-		return;
-	}
+	char *dirname = instance_to_template(clean_dirname, len);
+	if(!dirname) return; /* not an instance dir */
+	len = strlen(dirname);
 	shadow_cache_remove(dirname);
 	while(len > SHADOW_G(template_len)) {
 		char c;
 		while(len > SHADOW_G(template_len) && !IS_SLASH(dirname[len])) len--;
+		/* remove both one with slash at the end and without it, just in case */
 		dirname[len+1] = '\0';
 		shadow_cache_remove(dirname);
 		dirname[len] = '\0';
@@ -771,11 +777,15 @@ static int shadow_unlink(php_stream_wrapper *wrapper, char *url, int options, ph
 	char *instname = template_to_instance(url, 0 TSRMLS_CC);
 	int res;
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_UNLINK) fprintf(stderr, "Unlink: %s (%s) %d\n", url, instname, options);
-	if(SHADOW_ENABLED()) {
-		shadow_cache_remove(url);
-	}
 	if(instname) {
 		url = instname;
+		if(SHADOW_ENABLED()) {
+			char *tempname = instance_to_template(instname, strlen(instname) TSRMLS_CC);
+			if(tempname) {
+				shadow_cache_remove(tempname);
+				efree(tempname);
+			}
+		}
 	}
 	res = plain_ops->unlink(wrapper, url, options, context TSRMLS_CC);
 	if(instname) {
