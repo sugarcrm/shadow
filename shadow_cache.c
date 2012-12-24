@@ -22,6 +22,9 @@ void shadow_cache_set_id(const char *template, const char *instance TSRMLS_DC)
 	int namelen;
 	uint *psegment;
 
+	if(SHADOW_G(cache_size) == 0) {
+		return;
+	}
 	namelen = spprintf(&segname, 0, "0\x9%s\x9%s", template, instance);
 	if(zend_hash_find(&SHADOW_G(cache), segname, namelen+1, (void **)&psegment) != SUCCESS) {
 		uint segment;
@@ -45,6 +48,9 @@ int shadow_cache_get(const char *name, char **entry TSRMLS_DC)
 	char *segname;
 	int namelen;
 	char *centry;
+	if(SHADOW_G(cache_size) == 0) {
+		return NULL;
+	}
 	namelen = shadow_cache_segmented_name(&segname, name TSRMLS_CC);
 	if(zend_hash_find(&SHADOW_G(cache), segname, namelen+1, (void **)&centry) == SUCCESS) {
 		if(centry[0]) {
@@ -63,6 +69,9 @@ void shadow_cache_put(const char *name, const char *entry TSRMLS_DC)
 {
 	char *segname;
 	int namelen;
+	if(SHADOW_G(cache_size) == 0) {
+		return;
+	}
 	/* will copy the string */
 	if(!entry) {
 		entry = "";
@@ -76,6 +85,9 @@ void shadow_cache_remove(const char *name TSRMLS_DC)
 {
 	char *segname;
 	int namelen;
+	if(SHADOW_G(cache_size) == 0) {
+		return;
+	}
 	namelen = shadow_cache_segmented_name(&segname, name TSRMLS_CC);
 	zend_hash_del(&SHADOW_G(cache), segname, namelen+1);
 	efree(segname);
