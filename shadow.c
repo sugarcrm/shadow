@@ -1167,7 +1167,7 @@ static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS)
 {
 	char *filename;
 	int filename_len;
-	char *instname;
+	char *instname, *copy_name = NULL;
 
 	if(!SHADOW_ENABLED()) {
 		orig_realpath(INTERNAL_FUNCTION_PARAM_PASSTHRU);
@@ -1186,6 +1186,7 @@ static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS)
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_RESOLVE) fprintf(stderr, "Realpath %s (%s)\n", filename, instname);
 
 	if(instname) {
+		copy_name = estrdup(instname);
 		shadow_call_replace_name(0, instname, orig_realpath, INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		if(Z_TYPE_P(return_value) == IS_STRING) {
 			return;
@@ -1193,6 +1194,15 @@ static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS)
 	}
 
 	orig_realpath(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+	if(Z_TYPE_P(return_value) == IS_STRING) {
+		if(copy_name) {
+			efree(copy_name);
+		}
+		return;
+	}
+	if(copy_name) {
+		ZVAL_STRING(return_value, copy_name, 0);
+	}
 }
 /* }}} */
 
