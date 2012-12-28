@@ -97,6 +97,7 @@ function repairTables()
 	$repairedTables = array();
 
 	include 'include/modules.php';
+	$GLOBALS['reload_vardefs'] = true;
 	foreach ($beanList as $module => $bean) {
 		if(empty($beanFiles[$module])) continue;
 		$file = $beanFiles[$module];
@@ -104,7 +105,6 @@ function repairTables()
 		if(file_exists($file)){
 			require_once $file;
 			unset($GLOBALS['dictionary'][$object]);
-			VardefManager::loadVardef($module, $object, true);
 			$focus = new $bean ();
 			if (($focus instanceOf SugarBean) && !isset($repairedTables[$focus->table_name])) {
 			    $db->repairTable($focus, true);
@@ -112,6 +112,7 @@ function repairTables()
 			}
 		}
 	}
+	$GLOBALS['reload_vardefs'] = false;
 
 	unset ($dictionary);
 	include ('modules/TableDictionary.php');
