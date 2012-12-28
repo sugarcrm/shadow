@@ -608,6 +608,9 @@ if (is_file($file)) {
 	post_install();
 }
 writeLog('Done post_install().');
+if(is_callable(array('SugarAutoLoader', 'buildCache'))) {
+	SugarAutoLoader::buildCache();
+}
 
 upgrade_check_errors($errors);
 
