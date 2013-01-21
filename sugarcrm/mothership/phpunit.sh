@@ -5,4 +5,7 @@ export SERVER_NAME=$1
 export REMOTE_ADDR=$1
 export DOCUMENT_ROOT="$2"
 export SHADOW_ROOT="$2"
+# Drop first two args
+shift
+shift
 cd /mnt/sugar/shadowed/$SERVER_NAME/tests && php -dauto_prepend_file="/mnt/sugar/SugarShadowEnv.php" phpunit.php $*
