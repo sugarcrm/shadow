@@ -115,4 +115,4 @@ class SugarShadow
 	}
 }
 
-SugarShadow::shadow($_SERVER['SERVER_NAME'], $_SERVER['DOCUMENT_ROOT');
+SugarShadow::shadow($_SERVER['SERVER_NAME'], $_SERVER['DOCUMENT_ROOT']);
