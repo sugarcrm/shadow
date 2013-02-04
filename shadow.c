@@ -182,12 +182,12 @@ static void shadow_override_function(char *fname, int fname_len, int argno, int 
 	char *col;
 
 	if((col = strchr(fname, ':')) != NULL) {
-		zend_class_entry *cls;
+		zend_class_entry **cls;
 		*col = '\0';
-		if(zend_hash_find(CG(class_table), fname, col-fname+1, (void **)cls) != SUCCESS) {
+		if(zend_hash_find(CG(class_table), fname, col-fname+1, (void **)&cls) != SUCCESS) {
 			return;
 		}
-		table = &(cls->function_table);
+		table = &((*cls)->function_table);
 		fname = col+2;
 		fname_len = strlen(fname);
 	}
@@ -200,7 +200,7 @@ static void shadow_override_function(char *fname, int fname_len, int argno, int 
 	override.original.internal_function.handler = shadow_generic_override;
 	override.argno = argno;
 	override.argtype = argtype;
-	zend_hash_update(CG(function_table), fname, fname_len+1, &override, sizeof(shadow_function), NULL);
+	zend_hash_update(table, fname, fname_len+1, &override, sizeof(shadow_function), NULL);
 }
 
 /* {{{ PHP_MINIT_FUNCTION

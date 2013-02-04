@@ -31,11 +31,9 @@ class SugarShadow
         $this->server = $server;
         $this->key = md5($server);
 
-        $path = $this->config['shadow']['instancePath'] . '/' .
-                 $_SERVER['SERVER_NAME'];
+        $path = $this->config['shadow']['instancePath'] . '/' . $_SERVER['SERVER_NAME'];
 
-        if ($_SERVER['REMOTE_ADDR'] != "127.0.0.1" &&
-                 file_exists($path . "/maintenance.txt")) {
+        if ($_SERVER['REMOTE_ADDR'] != "127.0.0.1" && file_exists($path . "/maintenance.txt")) {
             die("<html><head><title>Under Maintence</title></head><body><center>This instance is currently under maintenance</center></body></html>");
         }
     }
