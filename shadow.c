@@ -650,6 +650,10 @@ static char *template_to_instance(const char *filename, int options TSRMLS_DC)
 			newname = realpath?realpath:estrndup(filename, fnamelen);
 			realpath = NULL;
 		}
+	} else if((options & OPT_RETURN_INSTANCE) && strncmp(SHADOW_G(instance), filename, SHADOW_G(instance_len)) == 0
+			&& (filename[SHADOW_G(instance_len)] == '\0' || IS_SLASH(filename[SHADOW_G(instance_len)]))) {
+		/* it is the instance dir itself - return it */
+		newname = estrndup(filename, fnamelen);
 	}
 
 	if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK)	fprintf(stderr, "Path check: %s => %s\n", filename, newname);
