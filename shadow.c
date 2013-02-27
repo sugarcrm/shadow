@@ -591,7 +591,7 @@ static inline char *instance_to_template(const char *instname, int len TSRMLS_DC
 Returns new instance path or NULL if template path is OK
 filename is relative to template root
 */
-static char *template_to_instance(const char *filename, int options TSRMLS_DC)
+static char *template_to_instance(char *filename, int options TSRMLS_DC)
 {
 	char *realpath = NULL;
 	int fnamelen = strlen(filename);
@@ -609,6 +609,10 @@ static char *template_to_instance(const char *filename, int options TSRMLS_DC)
 	}
 	filename = realpath;
 	fnamelen = strlen(realpath);
+	while(IS_SLASH(filename[fnamelen-1]) && fnamelen > 1) {
+		filename[fnamelen-1] = '\0';
+		fnamelen--;
+	}
 
 	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), filename, fnamelen)) {
 		if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "In template: %s\n", filename);
@@ -772,6 +776,7 @@ static int shadow_stat(php_stream_wrapper *wrapper, char *url, int flags, php_st
 		return res;
 	}
 	res = plain_ops->url_stat(wrapper, url, flags, ssb, context TSRMLS_CC);
+	if(SHADOW_G(debug) & SHADOW_DEBUG_STAT)  fprintf(stderr, "Stat res: %d\n", res);
 	adjust_stat(ssb);
 	return res;
 }
