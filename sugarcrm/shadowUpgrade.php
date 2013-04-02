@@ -102,6 +102,7 @@ function repairTables()
 		if(empty($beanFiles[$bean])) continue;
 		$file = $beanFiles[$bean];
 		$object = BeanFactory::getObjectName($module);
+		writeLog("Repairing $bean:$object");
 		if(file_exists($file)){
 			require_once $file;
 			unset($GLOBALS['dictionary'][$object]);
