@@ -99,8 +99,8 @@ function repairTables()
 	include 'include/modules.php';
 	$GLOBALS['reload_vardefs'] = true;
 	foreach ($beanList as $module => $bean) {
-		if(empty($beanFiles[$module])) continue;
-		$file = $beanFiles[$module];
+		if(empty($beanFiles[$bean])) continue;
+		$file = $beanFiles[$bean];
 		$object = BeanFactory::getObjectName($module);
 		if(file_exists($file)){
 			require_once $file;
