@@ -1,24 +1,27 @@
 --TEST--
 Check directory listing for main dir
 --SKIPIF--
-<?php if (!extension_loaded("shadow")) print "skip"; ?>
+<?php if (!extension_loaded('shadow')) {
+    print 'skip';
+} ?>
 --FILE--
 <?php
-$template = "templatedir";
-$instance = "instance";
-chdir("instance");
-shadow($template, $instance, array("cache", "custom"));
+require_once 'setup.inc';
+chdir('instance');
 
-$iter = new DirectoryIterator("./");
+$iter = new DirectoryIterator('./');
 $filenames = array();
-foreach($iter as $item) {
-        if($item->isDot()) continue;
-        $filenames[] = $item->getFilename();
+foreach ($iter as $item) {
+    if ($item->isDot()) {
+        continue;
+    }
+    $filenames[] = $item->getFilename();
 }
 sort($filenames);
 var_dump($filenames);
+?>
 --EXPECT--
-array(14) {
+array(13) {
   [0]=>
   string(5) "cache"
   [1]=>
@@ -45,6 +48,4 @@ array(14) {
   string(3) "txt"
   [12]=>
   string(14) "unwritable.txt"
-  [13]=>
-  string(7) "urw.php"
 }

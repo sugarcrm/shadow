@@ -3,7 +3,7 @@ Check writing to files in new dir, full paths
 --SKIPIF--
 <?php if (!extension_loaded("shadow")) print "skip"; ?>
 --FILE--
-<?php 
+<?php
 require_once('setup.inc');
 
 $template=realpath($template);
@@ -19,7 +19,7 @@ var_dump(file_exists("$template/templdir2/new/dir/_twrite.txt"));
 var_dump(file_exists("$instance/templdir2/new/dir/_twrite.txt"));
 
 shadow("",""); // disable shadowing
-echo "Unshadow\n";
+echo "Unshadow" . PHP_EOL;
 var_dump(file_exists("$template/txt/new/dir/_twrite.txt"));
 var_dump(file_exists("$instance/txt/new/dir/_twrite.txt"));
 
