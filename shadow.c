@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2014, SugarCRM Inc. 
+ * Copyright (C) 2014, SugarCRM Inc.
  *
- *  This product is licensed by SugarCRM under the Apache License, Version 2.0 (the "License"). 
+ *  This product is licensed by SugarCRM under the Apache License, Version 2.0 (the "License").
  *  You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
@@ -1213,7 +1213,6 @@ static void shadow_is_writable(INTERNAL_FUNCTION_PARAMETERS)
 	char *instname;
 	zval **name;
 	zval *old_name, *new_name;
-	int dir_len;
 
 	if(!SHADOW_ENABLED()) {
 		orig_is_writable(INTERNAL_FUNCTION_PARAM_PASSTHRU);
@@ -1238,7 +1237,6 @@ static void shadow_is_writable(INTERNAL_FUNCTION_PARAMETERS)
 
 	ensure_dir_exists(instname, &shadow_wrapper, NULL TSRMLS_CC);
 	/* Check whether dir containing the file is writable */
-	zend_dirname(instname, strlen(instname));
 	shadow_call_replace_name(0, instname, orig_is_writable, INTERNAL_FUNCTION_PARAM_PASSTHRU);
 }
 /* }}} */

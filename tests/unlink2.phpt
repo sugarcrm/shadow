@@ -1,9 +1,11 @@
 --TEST--
 Check unlinking files and then reading
 --SKIPIF--
-<?php if (!extension_loaded("shadow")) print "skip"; ?>
+<?php if (!extension_loaded("shadow")) {
+    print "skip";
+}?>
 --FILE--
-<?php 
+<?php
 require_once('setup.inc');
 
 file_put_contents("$instance/txt/tfile.txt", "writing as instance\n");
@@ -14,4 +16,4 @@ var_dump(file_exists("txt/tfile.txt"));
 ?>
 --EXPECT--
 bool(true)
-bool(true)
+bool(false)
