@@ -8,8 +8,8 @@ PHP module
 Shadow is implemented as PHP extension. Compile it using:
 
 ```bash
-/path/to/php/install/bin/phpize
-./configure --with-php-config=/path/to/php/install/bin/php-config
+phpize
+./configure --with-php-config=php-config
 make
 make install
 make test
@@ -80,7 +80,7 @@ DEBUG_CHMOD        (1<<11)  4096
 DEBUG_OVERRIDE     (1<<12)  8192
 ```
 
-For enable all DEBUG message shadow.xdebug must be equal 8191
+For enable all DEBUG message shadow.debug must be equal 8191
 
 Sugar Module
 ============

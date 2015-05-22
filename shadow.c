@@ -54,7 +54,7 @@ static php_stream_ops shadow_dirstream_ops = {
 };
 
 static php_stream_wrapper_ops *plain_ops;
-static char *(*old_resolve_path)(const char *filename, int filename_len TSRMLS_DC);
+static char *(*original_zend_resolve_path)(const char *filename, int filename_len TSRMLS_DC);
 static void (*orig_touch)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_chmod)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_chdir)(INTERNAL_FUNCTION_PARAMETERS);
@@ -226,11 +226,11 @@ PHP_MINIT_FUNCTION(shadow)
 	shadow_wrapper_ops.stream_rmdir = shadow_rmdir;
 	shadow_wrapper_ops.dir_opener = shadow_dir_opener;
 	shadow_wrapper_ops.label = "shadow";
-/*	if(SHADOW_G(enabled)) {
-		old_resolve_path = zend_resolve_path;
+	if(SHADOW_G(enabled)) {
+		original_zend_resolve_path = zend_resolve_path;
 		zend_resolve_path = shadow_resolve_path;
 	}
-*/
+
 	SHADOW_OVERRIDE(touch);
 	SHADOW_OVERRIDE(chmod);
 	SHADOW_OVERRIDE(chdir);
@@ -694,9 +694,16 @@ static void ensure_dir_exists(char *pathname, php_stream_wrapper *wrapper, php_s
 
 static char *shadow_resolve_path(const char *filename, int filename_len TSRMLS_DC)
 {
-	char *result = old_resolve_path(filename, filename_len TSRMLS_CC);
-	if(SHADOW_G(debug) & SHADOW_DEBUG_RESOLVE) fprintf(stderr, "Resolve: %s -> %s\n", filename, result);
-	return result;
+    char *result = template_to_instance(filename, OPT_CHECK_EXISTS TSRMLS_CC);
+    // in any case we have to call original resolver because that can be reimplemented by opcache for example
+    if (result) {
+        int result_length = strlen(result);
+        result = original_zend_resolve_path(result, result_length TSRMLS_CC);
+    } else {
+        result = original_zend_resolve_path(filename, filename_len TSRMLS_CC);
+    }
+    if(SHADOW_G(debug) & SHADOW_DEBUG_RESOLVE) fprintf(stderr, "Resolve: %s -> %s\n", filename, result);
+    return result;
 }
 
 static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filename, char *mode,
