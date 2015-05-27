@@ -3,7 +3,7 @@
 %global php_version %(php-config --version 2>/dev/null || echo 0)
 
 Name:           php-shadow
-Version:        0.3.11
+Version:        0.3.12
 Release:        1sugar
 Summary:        Shadow is a multitenancy-support module for Sugar
 
@@ -46,6 +46,8 @@ rm -rf $RPM_BUILD_ROOT
 %{php_extdir}/shadow.so
 
 %changelog
+* Fri May 22 2015 Michael Gusev <mgusev@sugarcrm.com> - 0.3.12
+- Enabling shadow_resolve_path to support correct behavior with opcache
 * Wed Feb 27 2013 Stas Malyshev <smalyshev@sugarcrm.com> - 0.3.11
 - Fix treating dirs ending on /
 * Mon Feb 25 2013 Stas Malyshev <smalyshev@sugarcrm.com> - 0.3.10
