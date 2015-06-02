@@ -283,10 +283,10 @@ and then either run it through install or place suitable config_si.php in that d
 and let silent install do it.
 
 
-Atention
+Important
 ========
 
-Extension not work with opcache by default. Chenge opcache default options to:
+Extension not work with opcache by default. Change opcache default options to:
 
 ```php
 opcache.revalidate_freq = 0
