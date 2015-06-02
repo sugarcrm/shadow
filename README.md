@@ -293,3 +293,6 @@ opcache.revalidate_freq = 0
 opcache.revalidate_path = On
 ```
 
+Current directory (CWD) should always point to template directory When you use shadow.
+
+
