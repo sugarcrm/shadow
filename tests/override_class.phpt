@@ -1,5 +1,7 @@
 --TEST--
 Check overrides
+--EXTENSIONS--
+zip
 --INI--
 shadow.override=ziparchive::open@w0,ziparchive::addfile@0
 --SKIPIF--
