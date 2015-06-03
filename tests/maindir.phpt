@@ -7,9 +7,9 @@ Check directory listing for main dir
 --FILE--
 <?php
 require_once 'setup.inc';
-chdir('instance');
+chdir($instance);
 
-$iter = new DirectoryIterator('./');
+$iter = new DirectoryIterator('.');
 $filenames = array();
 foreach ($iter as $item) {
     if ($item->isDot()) {
