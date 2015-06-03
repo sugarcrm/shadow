@@ -24,9 +24,9 @@ echo shadow('', '') . PHP_EOL;
 --EXPECTF--
 array(3) {
   ["template"]=>
-  string(41) "%s"
+  string(%d) "%s"
   ["instance"]=>
-  string(38) "%s"
+  string(%d) "%s"
   ["instance_only"]=>
   array(2) {
     [0]=>
