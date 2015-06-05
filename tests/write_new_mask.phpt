@@ -9,6 +9,8 @@ shadow.mkdir_mask=0755
 <?php if (exec('whoami') == 'root') {
     print 'skip';
 } ?>
+--XFAIL--
+nrh: 20150605: We belive this feature to be unimplemnted, see CRYS-959
 --FILE--
 <?php
 require_once 'setup.inc';
