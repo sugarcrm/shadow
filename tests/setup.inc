@@ -1,10 +1,11 @@
 <?php
-$template = "templatedir";
-$instance = "instance";
+$topdir = dirname(__FILE__);
+$template = join(DIRECTORY_SEPARATOR, [$topdir, "templatedir"]);
+$instance = join(DIRECTORY_SEPARATOR, [$topdir, "instance"]);
 
 set_include_path(
-	get_include_path().PATH_SEPARATOR.dirname(__FILE__)."/templatedir"
+	get_include_path().PATH_SEPARATOR.$template
 );
-chdir(dirname(__FILE__));
 
-shadow($template, $instance, array("cache", "custom"));
+chdir($topdir);
+shadow($template, $instance, array("cache", "custom")) || die("failed to setup shadow");

@@ -14,7 +14,7 @@ echo file_get_contents("$template/cache/cache.txt");
 echo file_get_contents("$instance/cache/cache.txt");
 ?>
 --EXPECTF--
-Warning: file_get_contents(templatedir/custom/custom.txt): failed to open stream: operation failed in %s/read_custom.php on line 3
+Warning: file_get_contents(%s/custom/custom.txt): failed to open stream: operation failed in %s/read_custom.php on line 3
 bool(false)
 Instance custom!
 Instance custom!

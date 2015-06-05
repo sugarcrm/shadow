@@ -21,7 +21,7 @@ function dirread($dir)
         echo $value;
     }
 }
-chdir($instance);
+chdir($template);
 dirread('txt');
 dirread('custom');
 dirread('custom/subcustom');

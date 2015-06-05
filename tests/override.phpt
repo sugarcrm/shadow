@@ -1,5 +1,8 @@
 --TEST--
 Check overrides
+--EXTENSIONS--
+gd
+fileinfo
 --INI--
 shadow.override=imagepng@w1
 --SKIPIF--

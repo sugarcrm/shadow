@@ -8,11 +8,11 @@ Check unlinking files and then reading
 <?php
 require_once('setup.inc');
 
-file_put_contents("$instance/txt/tfile.txt", "writing as instance\n");
+file_put_contents("$instance/txt/unlink2.txt", "writing as instance\n");
 chdir($template);
-var_dump(file_exists("txt/tfile.txt"));
-unlink("txt/tfile.txt");
-var_dump(file_exists("txt/tfile.txt"));
+var_dump(file_exists("txt/unlink2.txt"));
+unlink("txt/unlink2.txt");
+var_dump(file_exists("txt/unlink2.txt"));
 ?>
 --EXPECT--
 bool(true)

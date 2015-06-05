@@ -7,9 +7,9 @@ Check directory listing for main dir
 --FILE--
 <?php
 require_once 'setup.inc';
-chdir('instance');
+chdir($instance);
 
-$iter = new DirectoryIterator('./');
+$iter = new DirectoryIterator('.');
 $filenames = array();
 foreach ($iter as $item) {
     if ($item->isDot()) {
@@ -21,7 +21,7 @@ sort($filenames);
 var_dump($filenames);
 ?>
 --EXPECT--
-array(13) {
+array(14) {
   [0]=>
   string(5) "cache"
   [1]=>
@@ -35,17 +35,19 @@ array(13) {
   [5]=>
   string(10) "nowritedir"
   [6]=>
-  string(17) "template_only.php"
+  string(23) "opcache-override-me.php"
   [7]=>
-  string(8) "templdir"
+  string(17) "template_only.php"
   [8]=>
-  string(9) "templdir2"
+  string(8) "templdir"
   [9]=>
-  string(8) "test.php"
+  string(9) "templdir2"
   [10]=>
-  string(12) "tinclude.php"
+  string(8) "test.php"
   [11]=>
-  string(3) "txt"
+  string(12) "tinclude.php"
   [12]=>
+  string(3) "txt"
+  [13]=>
   string(14) "unwritable.txt"
 }
