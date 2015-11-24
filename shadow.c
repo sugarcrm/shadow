@@ -608,8 +608,8 @@ static char *template_to_instance(char *filename, int options TSRMLS_DC)
 		if((options & OPT_CHECK_EXISTS) && shadow_cache_get(filename, &newname) == SUCCESS) {
 			if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "Path check from cache: %s => %s\n", filename, newname);
 			if(realpath) {
-                efree(realpath);
-            }
+            			efree(realpath);
+            		}
 			return newname;
 		}
 		/* starts with template - rewrite to instance */
