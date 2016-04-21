@@ -555,7 +555,11 @@ static char *get_full_path(const char *filename TSRMLS_DC)
     	if(new_state.cwd) free(new_state.cwd);
         return NULL;
     }
-	return estrndup(new_state.cwd, new_state.cwd_length);
+	char *full_path = estrndup(new_state.cwd, new_state.cwd_length);
+	if (new_state.cwd) {
+		free(new_state.cwd);
+	}
+	return full_path;
 }
 
 static inline char *instance_to_template(const char *instname, int len TSRMLS_DC)
