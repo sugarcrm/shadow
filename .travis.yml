@@ -1,0 +1,16 @@
+language: php
+
+php:
+  - '5.4'
+  - '5.5'
+  - '7.0'
+
+install:
+
+before_script:
+
+script:
+  - cd tests && pear run-tests
+
+after_success:
+
