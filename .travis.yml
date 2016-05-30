@@ -12,7 +12,7 @@ install:
 before_script:
 
 script:
-  - ls
+  - cd tests && pear run-tests 
 
 after_success:
 
