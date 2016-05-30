@@ -8,7 +8,6 @@ php:
   - '7.0'
 
 install:
-  - pear install pear/run-phpt
 
 before_script:
 
