@@ -8,6 +8,11 @@ php:
 install:
 
 before_script:
+  - phpize
+  - ./configure --with-php-config=php-config
+  - make
+  - make install
+  - make test
 
 script:
   - cd tests && pear run-tests 

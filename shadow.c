@@ -165,6 +165,7 @@ PHP_INI_END()
 
 static void shadow_override_function(char *fname, int fname_len, int argno, int argtype)
 {
+        TSRMLS_FETCH();
 	zend_function *orig;
 	shadow_function override;
 	HashTable *table = CG(function_table);
