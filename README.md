@@ -24,6 +24,8 @@ extension=shadow.so
 
 to the php.ini.
 
+Make sure extension is loaded after zip extension, otherwise its methods won't be overridden.
+
 Only Unix-based systems are currently supported, no build for Windows as
 of yet.
 
