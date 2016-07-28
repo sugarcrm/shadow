@@ -23,6 +23,8 @@ extension=shadow.so
 ```
 
 to the php.ini.
+If shadow overrides any function or method from other extension that extension should be loaded first.
+E.g. in default configuration it overrides zip extension, so zip should be loaded before shadow.
 
 Only Unix-based systems are currently supported, no build for Windows as
 of yet.
@@ -59,6 +61,29 @@ php.ini parameters for shadow. Default is fine for most cases.
 | shadow.mkdir\_mask | 0755    | Mask used when creating new directories on instances |
 | shadow.debug       | 0       | Debug level (bitmask)                                |
 | shadow.cache\_size | 10000   | Shadow cache size (in bytes, per process)            |
+
+Sample shadow.ini:
+
+```
+; Enable Shadow extension module
+extension=shadow.so
+
+; Determines if Shadow is enabled
+;shadow.enabled=1
+
+; Create dir (mkdir function) with this mask
+shadow.mkdir_mask=0750
+
+; Override function
+shadow.override=imagepng@w1,finfo_file@1,ext2mime@0,mime_content_type@0,ziparchive::open@w0,ziparchive::addfile@0,tempnam@w0,chdir@0
+
+; Shadow debug, 8191 - this number enable all debug options.
+; Messages send to std err or apache error.log.
+;shadow.debug=8191
+
+; Cache size for files or folders paths. 10000 is default.
+;shadow.cache_size=10000
+```
 
 Debug level
 -----------
