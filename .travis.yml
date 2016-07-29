@@ -8,10 +8,10 @@ php:
 before_script:
   - phpize
   - ./configure --with-php-config=php-config
-  - make
+  - .travis/run-test.sh make
 
 script:
-  - .travis/run-test.sh
+  - .travis/run-test.sh make test
 
 after_success:
 

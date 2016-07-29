@@ -8,6 +8,5 @@ if [ $php_zts -eq 1 ] ; then
     echo "Skipping tests for ZTS, because we currently don't work with ZTS PHP"
     exit 0
 else
-    cd $(pwd)
-    make test
+    $*
 fi
