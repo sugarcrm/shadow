@@ -3,14 +3,14 @@ language: php
 php:
   - '5.4'
   - '5.5'
-  - '7.0'
-
-install:
 
 before_script:
+  - phpize
+  - ./configure --with-php-config=php-config
+  - make
 
 script:
-  - cd tests && pear run-tests
+  - .travis/run-test.sh
 
 after_success:
 
