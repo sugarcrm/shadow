@@ -45,3 +45,4 @@ case $(phpenv version | cut -f 1 -d ' ') in
     exit 1
     ;;
 esac
+
