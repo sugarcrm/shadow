@@ -3,7 +3,7 @@
 phpver=$(phpenv version | cut -f 1 -d ' ')
 echo "PHP version reported by phpenv is: $phpver"
 case $phpver in
-  5.4.*)
+  5.4|5.4.*)
     # Oh goody, stupidly old PHP version. Here comes some fun.
     sudo add-apt-repository ppa:ondrej/php5-oldstable
     sudo apt-get update
@@ -17,7 +17,7 @@ case $phpver in
     # trouble of installing ones that aren't total crap.
     phpenv global system
     ;;
-  5.5.*)
+  5.5|5.5.*)
     # Slightly less painfully old PHP version.
     sudo add-apt-repository ppa:ondrej/php
     sudo apt-get update
@@ -30,7 +30,7 @@ case $phpver in
         /usr/bin/php-config5.5
     phpenv global system
     ;;
-  5.6.*)
+  5.6|5.6.*)
     sudo add-apt-repository ppa:ondrej/php
     sudo apt-get update
     sudo apt-get install php5.6-dev php5.6-cli
