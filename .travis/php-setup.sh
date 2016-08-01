@@ -1,6 +1,8 @@
 #!/bin/bash
 
-case $(phpenv version | cut -f 1 -d ' ') in
+phpver=$(phpenv version | cut -f 1 -d ' ')
+echo "PHP version reported by phpenv is: $phpver"
+case $phpver in
   5.4.*)
     # Oh goody, stupidly old PHP version. Here comes some fun.
     sudo add-apt-repository ppa:ondrej/php5-oldstable
