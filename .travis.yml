@@ -11,7 +11,7 @@ before_script:
   - phpize
   - ./configure --with-php-config=php-config
   - make
-  - sed -i,.stock -r -e 's/!mail_qa_team\(\$[[:alnum:]_]+,[[:space:]]*\$[[:alnum:]_]+,[[:space:]]*\$[[:alnum:]_]+\)/true/' run-tests.php
+  - sed -i.stock -r -e 's/!mail_qa_team\(\$[[:alnum:]_]+,[[:space:]]*\$[[:alnum:]_]+,[[:space:]]*\$[[:alnum:]_]+\)/true/' run-tests.php
 
 script:
   - REPORT_EXIT_STATUS=1 NO_INTERACTION=1 make test

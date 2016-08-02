@@ -42,6 +42,18 @@ case $phpver in
         /usr/bin/php-config5.6
     phpenv global system
     ;;
+  7.0|7.0.*)
+    sudo add-apt-repository -y ppa:ondrej/php
+    sudo apt-get update
+    sudo apt-get install php7.0-dev php7.0-cli
+
+    # The packages for 12.04 use dpkg-query in a broken way. Fix the script
+    # so that when we call it to find what SAPIs are present, it doesn't
+    # just shrug its shoulders at us.
+    sudo sed -i.stock -r -e 's/\$\{binary:Package\}/${Package}/' \
+        /usr/bin/php-config7.0
+    phpenv global system
+    ;;
   *)
     echo "Fool, I don't know anything about that PHP version."
     exit 1
