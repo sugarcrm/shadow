@@ -16,4 +16,9 @@ before_script:
 script:
   - REPORT_EXIT_STATUS=1 NO_INTERACTION=1 make test
 
-after_success:
+notifications:
+  email:
+    recipients:
+      - zac@sugarcrm.com
+    on_success: change
+    on_failure: always
