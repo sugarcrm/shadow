@@ -13,6 +13,6 @@ before_script:
   - make
 
 script:
-  - yes 'n' | REPORT_EXIT_STATUS=1 make test
+  - REPORT_EXIT_STATUS=1 NO_INTERACTION=1 make test
 
 after_success:
