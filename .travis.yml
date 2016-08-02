@@ -1,16 +1,24 @@
 language: php
+sudo: true
 
 php:
   - '5.4'
   - '5.5'
-  - '7.0'
-
-install:
+  - '5.6'
 
 before_script:
+  - .travis/php-setup.sh
+  - phpize
+  - ./configure --with-php-config=php-config
+  - make
+  - sed -i.stock -r -e 's/!mail_qa_team\(\$[[:alnum:]_]+,[[:space:]]*\$[[:alnum:]_]+,[[:space:]]*\$[[:alnum:]_]+\)/true/' run-tests.php
 
 script:
-  - cd tests && pear run-tests
+  - REPORT_EXIT_STATUS=1 NO_INTERACTION=1 make test
 
-after_success:
-
+notifications:
+  email:
+    recipients:
+      - zac@sugarcrm.com
+    on_success: change
+    on_failure: always
