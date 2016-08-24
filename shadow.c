@@ -17,6 +17,14 @@
 #include <fcntl.h>
 #include "shadow_cache.h"
 
+#if PHP_VERSION_ID < 50600
+#define cwd_state_estrdup(str) strdup(str);
+#define cwd_state_efree(str) free(str);
+#else
+#define cwd_state_estrdup(str) estrdup(str);
+#define cwd_state_efree(str) efree(str);
+#endif
+
 ZEND_DECLARE_MODULE_GLOBALS(shadow)
 
 typedef struct _shadow_function {
@@ -549,15 +557,17 @@ static char *get_full_path(const char *filename TSRMLS_DC)
 		SHADOW_G(curdir) = getcwd(NULL, 0);
 	}
 
-	new_state.cwd = strdup(SHADOW_G(curdir));
+	new_state.cwd = cwd_state_estrdup(SHADOW_G(curdir));
 	new_state.cwd_length = strlen(SHADOW_G(curdir));
 	if (virtual_file_ex(&new_state, filename, NULL, CWD_FILEPATH)) {
-    	if(new_state.cwd) free(new_state.cwd);
+		if(new_state.cwd) {
+			cwd_state_efree(new_state.cwd);
+		}
         return NULL;
     }
 	char *full_path = estrndup(new_state.cwd, new_state.cwd_length);
 	if (new_state.cwd) {
-		free(new_state.cwd);
+		cwd_state_efree(new_state.cwd);
 	}
 	return full_path;
 }
