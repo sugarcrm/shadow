@@ -125,10 +125,19 @@ static PHP_GSHUTDOWN_FUNCTION(shadow)
 }
 /* }}} */
 
+/* {{{ shadow_deps
+ */
+static const zend_module_dep shadow_deps[] = {
+	ZEND_MOD_OPTIONAL("zip")
+	ZEND_MOD_END
+};
+/* }}} */
+
 /* {{{ shadow_module_entry
  */
 zend_module_entry shadow_module_entry = {
-	STANDARD_MODULE_HEADER,
+	STANDARD_MODULE_HEADER_EX, NULL,
+	shadow_deps,
 	"shadow",
 	shadow_functions,
 	PHP_MINIT(shadow),
