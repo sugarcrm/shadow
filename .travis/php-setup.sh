@@ -21,7 +21,7 @@ case $phpver in
     # Slightly less painfully old PHP version.
     sudo add-apt-repository -y ppa:ondrej/php
     sudo apt-get update
-    sudo apt-get -y install php5.5-dev php5.5-cli
+    sudo apt-get -y install php5.5-dev php5.5-cli php5.5-zip
 
     # The packages for 12.04 use dpkg-query in a broken way. Fix the script
     # so that when we call it to find what SAPIs are present, it doesn't
@@ -33,7 +33,7 @@ case $phpver in
   5.6|5.6.*)
     sudo add-apt-repository -y ppa:ondrej/php
     sudo apt-get update
-    sudo apt-get install php5.6-dev php5.6-cli
+    sudo apt-get install php5.6-dev php5.6-cli php5.6-zip
 
     # The packages for 12.04 use dpkg-query in a broken way. Fix the script
     # so that when we call it to find what SAPIs are present, it doesn't
@@ -45,7 +45,7 @@ case $phpver in
   7.0|7.0.*)
     sudo add-apt-repository -y ppa:ondrej/php
     sudo apt-get update
-    sudo apt-get install php7.0-dev php7.0-cli
+    sudo apt-get install php7.0-dev php7.0-cli php7.0-zip
 
     # The packages for 12.04 use dpkg-query in a broken way. Fix the script
     # so that when we call it to find what SAPIs are present, it doesn't
