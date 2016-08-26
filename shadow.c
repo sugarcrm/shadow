@@ -659,6 +659,7 @@ static char *template_to_instance(const char *filename, int options TSRMLS_DC)
 				/* TODO: use realpath here too? */
 				if((options & OPT_RETURN_INSTANCE)) {
 					newname = estrndup(realpath, fnamelen);
+					efree(realpath);
 					realpath = NULL;
 				} else {
 					newname = NULL;
@@ -667,6 +668,7 @@ static char *template_to_instance(const char *filename, int options TSRMLS_DC)
 		} else {
 			/* use already resolved name if we are writing - this way we can use it for recursive mkdir */
 			newname = estrndup(realpath, fnamelen);
+			efree(realpath);
 			realpath = NULL;
 		}
 	} else if((options & OPT_RETURN_INSTANCE) && strncmp(SHADOW_G(instance), realpath, SHADOW_G(instance_len)) == 0
@@ -1423,6 +1425,7 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	/* cleanup */
 	zend_hash_destroy(mergedata);
 	efree(mergedata);
+	efree(path);
 }
 /* }}} */
 
