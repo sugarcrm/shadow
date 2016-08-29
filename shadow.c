@@ -935,7 +935,11 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *pa
 	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), instname, strlen(instname))) {
 		/* instname is in a template, we don't need another template name */
 	} else {
-		spprintf(&templname, MAXPATHLEN, "%s/%s", SHADOW_G(template), instname+SHADOW_G(instance_len)+1);
+		if (strlen(instname) > SHADOW_G(instance_len)) {
+			spprintf(&templname, MAXPATHLEN, "%s/%s", SHADOW_G(template), instname+SHADOW_G(instance_len)+1);
+		} else {
+			templname = estrdup(SHADOW_G(template));
+		}
 		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening templdir: %s\n", templname);
 		tempdir = plain_ops->dir_opener(wrapper, templname, mode, options&(~REPORT_ERRORS), opened_path, context STREAMS_CC TSRMLS_CC);
 		efree(templname);
