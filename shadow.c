@@ -129,10 +129,10 @@ zend_module_entry shadow_module_entry = {
 	PHP_RSHUTDOWN(shadow),
 	PHP_MINFO(shadow),
 	SHADOW_VERSION,
-    PHP_MODULE_GLOBALS(shadow),
-    PHP_GINIT(shadow),
-    PHP_GSHUTDOWN(shadow),
-    NULL,
+	PHP_MODULE_GLOBALS(shadow),
+	PHP_GINIT(shadow),
+	PHP_GSHUTDOWN(shadow),
+	NULL,
 	STANDARD_MODULE_PROPERTIES_EX
 };
 /* }}} */
@@ -144,11 +144,11 @@ ZEND_GET_MODULE(shadow)
 /* {{{ PHP_INI
  */
 PHP_INI_BEGIN()
-    STD_PHP_INI_ENTRY("shadow.enabled",      "1", PHP_INI_ALL, OnUpdateBool, enabled, zend_shadow_globals, shadow_globals)
-    STD_PHP_INI_ENTRY("shadow.mkdir_mask",      "0755", PHP_INI_ALL, OnUpdateLong, mkdir_mask, zend_shadow_globals, shadow_globals)
-    STD_PHP_INI_ENTRY("shadow.debug",      "0", PHP_INI_ALL, OnUpdateLong, debug, zend_shadow_globals, shadow_globals)
-    STD_PHP_INI_ENTRY("shadow.cache_size",      "10000", PHP_INI_ALL, OnUpdateLong, cache_size, zend_shadow_globals, shadow_globals)
-    STD_PHP_INI_ENTRY("shadow.override",      "", PHP_INI_SYSTEM, OnUpdateString, override, zend_shadow_globals, shadow_globals)
+	STD_PHP_INI_ENTRY("shadow.enabled",	  "1", PHP_INI_ALL, OnUpdateBool, enabled, zend_shadow_globals, shadow_globals)
+	STD_PHP_INI_ENTRY("shadow.mkdir_mask",      "0755", PHP_INI_ALL, OnUpdateLong, mkdir_mask, zend_shadow_globals, shadow_globals)
+	STD_PHP_INI_ENTRY("shadow.debug",      "0", PHP_INI_ALL, OnUpdateLong, debug, zend_shadow_globals, shadow_globals)
+	STD_PHP_INI_ENTRY("shadow.cache_size",      "10000", PHP_INI_ALL, OnUpdateLong, cache_size, zend_shadow_globals, shadow_globals)
+	STD_PHP_INI_ENTRY("shadow.override",      "", PHP_INI_SYSTEM, OnUpdateString, override, zend_shadow_globals, shadow_globals)
 PHP_INI_END()
 /* }}} */
 
@@ -157,8 +157,8 @@ PHP_INI_END()
 #define SHADOW_OVERRIDE(func) \
 	orig_##func = NULL; \
 	if (zend_hash_find(CG(function_table), #func, sizeof(#func), (void **)&orig) == SUCCESS) { \
-        orig_##func = orig->internal_function.handler; \
-        orig->internal_function.handler = shadow_##func; \
+		orig_##func = orig->internal_function.handler; \
+		orig->internal_function.handler = shadow_##func; \
 	}
 
 #define SHADOW_ENABLED() (SHADOW_G(enabled) != 0 && SHADOW_G(instance) != NULL && SHADOW_G(template) != NULL)
@@ -552,9 +552,9 @@ static char *get_full_path(const char *filename TSRMLS_DC)
 	new_state.cwd = strdup(SHADOW_G(curdir));
 	new_state.cwd_length = strlen(SHADOW_G(curdir));
 	if (virtual_file_ex(&new_state, filename, NULL, CWD_FILEPATH)) {
-    	if(new_state.cwd) free(new_state.cwd);
-        return NULL;
-    }
+		if(new_state.cwd) free(new_state.cwd);
+		return NULL;
+	}
 	char *full_path = estrndup(new_state.cwd, new_state.cwd_length);
 	if (new_state.cwd) {
 		free(new_state.cwd);
@@ -612,8 +612,8 @@ static char *template_to_instance(char *filename, int options TSRMLS_DC)
 		if((options & OPT_CHECK_EXISTS) && shadow_cache_get(filename, &newname) == SUCCESS) {
 			if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "Path check from cache: %s => %s\n", filename, newname);
 			if(realpath) {
-            			efree(realpath);
-            		}
+				efree(realpath);
+			}
 			return newname;
 		}
 		/* starts with template - rewrite to instance */
@@ -701,16 +701,16 @@ static void ensure_dir_exists(char *pathname, php_stream_wrapper *wrapper, php_s
 
 static char *shadow_resolve_path(const char *filename, int filename_len TSRMLS_DC)
 {
-    char *result = template_to_instance(filename, OPT_CHECK_EXISTS TSRMLS_CC);
-    // in any case we have to call original resolver because that can be reimplemented by opcache for example
-    if (result) {
-        int result_length = strlen(result);
-        result = original_zend_resolve_path(result, result_length TSRMLS_CC);
-    } else {
-        result = original_zend_resolve_path(filename, filename_len TSRMLS_CC);
-    }
-    if(SHADOW_G(debug) & SHADOW_DEBUG_RESOLVE) fprintf(stderr, "Resolve: %s -> %s\n", filename, result);
-    return result;
+	char *result = template_to_instance(filename, OPT_CHECK_EXISTS TSRMLS_CC);
+	// in any case we have to call original resolver because that can be reimplemented by opcache for example
+	if (result) {
+		int result_length = strlen(result);
+		result = original_zend_resolve_path(result, result_length TSRMLS_CC);
+	} else {
+		result = original_zend_resolve_path(filename, filename_len TSRMLS_CC);
+	}
+	if(SHADOW_G(debug) & SHADOW_DEBUG_RESOLVE) fprintf(stderr, "Resolve: %s -> %s\n", filename, result);
+	return result;
 }
 
 static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, char *filename, char *mode,
