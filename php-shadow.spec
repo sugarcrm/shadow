@@ -32,20 +32,16 @@ make %{?_smp_mflags}
 rm -rf $RPM_BUILD_ROOT
 make install INSTALL_ROOT=$RPM_BUILD_ROOT
 
-# install configuration
-%{__mkdir} -p $RPM_BUILD_ROOT%{_sysconfdir}/php.d
-mkdir -p $RPM_BUILD_ROOT/etc/php.d
-%{__cp} sugarcrm/shadow.ini $RPM_BUILD_ROOT/etc/php.d/shadow.ini
-
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%config(noreplace) %{_sysconfdir}/php.d/shadow.ini
 %{php_extdir}/shadow.so
 
 %changelog
+* Thu Jul 28 2016 Alex Vlasov <avlasov@sugarcrm.com> - 0.3.12
+- Removed default shadow.ini to enforce proper manual installation
 * Fri May 22 2015 Michael Gusev <mgusev@sugarcrm.com> - 0.3.12
 - Enabling shadow_resolve_path to support correct behavior with opcache
 * Wed Feb 27 2013 Stas Malyshev <smalyshev@sugarcrm.com> - 0.3.11
