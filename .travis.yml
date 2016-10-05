@@ -12,6 +12,7 @@ before_script:
   - ./configure --with-php-config=php-config
   - make
   - sed -i.stock -r -e 's/!mail_qa_team\(\$[[:alnum:]_]+,[[:space:]]*\$[[:alnum:]_]+,[[:space:]]*\$[[:alnum:]_]+\)/true/' run-tests.php
+  - sed -i.stock -e "s/\$ini_settings\['extension'\]\[\] = \$ext_dir \. DIRECTORY_SEPARATOR \. \$req_ext \. '\.' \. PHP_SHLIB_SUFFIX;/array_unshift\(\$ini_settings\['extension'\], \$ext_dir \. DIRECTORY_SEPARATOR \. \$req_ext \. '\.' \. PHP_SHLIB_SUFFIX\);/" run-tests.php
   - sed -i.stock -e 's/run-tests\.php/run-tests.php --show-diff/' Makefile
 
 script:

@@ -5,7 +5,7 @@ zip
 --INI--
 shadow.override=ziparchive::open@w0,ziparchive::addfile@0
 --SKIPIF--
-<?php if (!extension_loaded("shadow")) print "skip"; ?>
+<?php if (!extension_loaded("shadow") || !extension_loaded("zip")) print "skip"; ?>
 --FILE--
 <?php 
 require_once('setup.inc');
