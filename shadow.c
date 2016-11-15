@@ -1147,7 +1147,6 @@ static void shadow_chdir(INTERNAL_FUNCTION_PARAMETERS)
 	}
 	orig_chdir(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 }
-/* TODO: chown */
 
 /* {{{ proto string fread(resource fp, int length)
    Binary-safe file read */
