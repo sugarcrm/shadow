@@ -5,7 +5,7 @@
  *  You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-void shadow_cache_set_id(const char *template, const char *instance TSRMLS_DC);
+void shadow_cache_set_id(zend_string *template, zend_string *instance TSRMLS_DC);
 int shadow_cache_get(const char *name, char **entry TSRMLS_DC);
 void shadow_cache_put(const char *name, const char *entry TSRMLS_DC);
 void shadow_cache_remove(const char *name TSRMLS_DC);

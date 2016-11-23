@@ -52,10 +52,8 @@ ZEND_BEGIN_MODULE_GLOBALS(shadow)
 	unsigned long cache_size;
 	char *override;
 	/* runtime data */
-	char *template;
-	char *instance;
-	int template_len;
-	int instance_len;
+	zend_string *template;
+	zend_string *instance;
 	char **instance_only;
 	int instance_only_count;
 	char *curdir;
