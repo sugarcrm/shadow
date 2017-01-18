@@ -165,14 +165,16 @@ PHP_INI_END()
 
 #define SHADOW_OVERRIDE(func) \
 	orig_##func = NULL; \
-	if ((orig = zend_hash_str_find_ptr(CG(function_table), #func, sizeof(#func) - 1)) != NULL) { \
+     	zend_string * key_##func = zend_string_init(#func, strlen(#func), 0);\
+	if ((orig = zend_hash_find_ptr(CG(function_table), key_##func)) != NULL) { \
         orig_##func = orig->internal_function.handler; \
         orig->internal_function.handler = shadow_##func; \
-	}
+	} \
+     	zend_string_release(key_##func);
 
 #define SHADOW_ENABLED() (SHADOW_G(enabled) != 0 && SHADOW_G(instance) != NULL && SHADOW_G(template) != NULL)
 
-static void shadow_override_function(char *fname, int fname_len, int argno, int argtype)
+static void shadow_override_function(char *fname, size_t fname_len, int argno, int argtype)
 {
 	zend_function *orig;
 	shadow_function override;
@@ -255,7 +257,7 @@ PHP_MINIT_FUNCTION(shadow)
 	 */
 	if(SHADOW_G(enabled) && SHADOW_G(override) && SHADOW_G(override)[0] != '\0') {
 		char *over = SHADOW_G(override);
-		int over_len;
+		size_t over_len;
 		char c;
 		int argno;
 		int argtype;
