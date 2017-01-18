@@ -161,7 +161,7 @@ PHP_INI_BEGIN()
 PHP_INI_END()
 /* }}} */
 
-#define SHADOW_CONSTANT(C) 		REGISTER_LONG_CONSTANT(#C, C, CONST_CS)
+#define SHADOW_CONSTANT(C) 		REGISTER_LONG_CONSTANT(#C, C, CONST_CS | CONST_PERSISTENT)
 
 #define SHADOW_OVERRIDE(func) \
 	orig_##func = NULL; \
@@ -184,7 +184,7 @@ static void shadow_override_function(char *fname, size_t fname_len, int argno, i
 	if((col = strchr(fname, ':')) != NULL) {
 		zend_class_entry **cls;
 		*col = '\0';
-        zend_string *fname_zs = zend_string_init(fname, strlen(col-fname+1), 0);
+		zend_string *fname_zs = zend_string_init(fname, col - fname + 1, 0);
 		if ((cls = zend_hash_find_ptr(CG(class_table), fname_zs)) == NULL) {
 			return;
 		}
@@ -198,6 +198,7 @@ static void shadow_override_function(char *fname, size_t fname_len, int argno, i
     zend_string *fname_zs = zend_string_init(fname, strlen(fname), 0);
 
 	if ((orig = zend_hash_find_ptr(table, fname_zs)) == NULL) {
+		zend_string_release(fname_zs);
 		return;
 	}
     
@@ -435,7 +436,7 @@ PHP_FUNCTION(shadow)
    Retrieve current shadow configuration */
 PHP_FUNCTION(shadow_get_config)
 {
-	zval *instance_only;
+	zval instance_only;
 	int i;
 
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -449,11 +450,11 @@ PHP_FUNCTION(shadow_get_config)
 	array_init_size(return_value, 3);
 	add_assoc_string(return_value, "template", SHADOW_G(template) ? SHADOW_G(template)->val : "");
 	add_assoc_string(return_value, "instance", SHADOW_G(instance) ? SHADOW_G(instance)->val : "");
-	array_init_size(instance_only, SHADOW_G(instance_only_count));
+	array_init_size(&instance_only, SHADOW_G(instance_only_count));
 	for(i=0;i<SHADOW_G(instance_only_count);i++) {
-		add_next_index_string(instance_only, SHADOW_G(instance_only)[i]);
+		add_next_index_string(&instance_only, SHADOW_G(instance_only)[i]);
 	}
-	add_assoc_zval(return_value, "instance_only", instance_only);
+	add_assoc_zval(return_value, "instance_only", &instance_only);
 }
 /* }}} */
 
@@ -1410,7 +1411,7 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 				char *mergepath;
 				if (Z_TYPE_P(src_entry) != IS_STRING) continue; /* weird, glob shouldn't do that to us */
 				spprintf(&mergepath, MAXPATHLEN, "%s/%s", path, Z_STRVAL_P(src_entry)+templen+1);
-				zend_hash_str_add_new(mergedata, mergepath, strlen(mergepath), dummy);
+				zend_hash_str_add_new_ptr(mergedata, mergepath, strlen(mergepath), dummy);
 				efree(mergepath);
 			} ZEND_HASH_FOREACH_END();
 		} else {
@@ -1432,7 +1433,7 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 			char *mergepath;
 			if (Z_TYPE_P(src_entry) != IS_STRING) continue; /* weird, glob shouldn't do that to us */
 			spprintf(&mergepath, MAXPATHLEN, "%s/%s", path, Z_STRVAL_P(src_entry)+instlen+1);
-			zend_hash_str_add(mergedata, mergepath, strlen(mergepath), dummy);
+			zend_hash_str_add_ptr(mergedata, mergepath, strlen(mergepath), dummy);
 			efree(mergepath);
 		} ZEND_HASH_FOREACH_END();
 	}
