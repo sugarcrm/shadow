@@ -184,25 +184,32 @@ static void shadow_override_function(char *fname, size_t fname_len, int argno, i
 	if((col = strchr(fname, ':')) != NULL) {
 		zend_class_entry **cls;
 		*col = '\0';
-		if ((cls = zend_hash_str_find_ptr(CG(class_table), fname, col - fname)) == NULL) {
+        zend_string *fname_zs = zend_string_init(fname, strlen(col-fname+1), 0);
+		if ((cls = zend_hash_find_ptr(CG(class_table), fname_zs)) == NULL) {
 			return;
 		}
+
+        zend_string_release(fname_zs);
 		table = &((*cls)->function_table);
 		fname = col+2;
 		fname_len = strlen(fname);
 	}
 
-	if ((orig = zend_hash_str_find_ptr(table, fname, fname_len)) == NULL) {
+    zend_string *fname_zs = zend_string_init(fname, strlen(fname), 0);
+
+	if ((orig = zend_hash_find_ptr(table, fname_zs)) == NULL) {
 		return;
 	}
+    
 	memcpy(&override, orig, sizeof(zend_function));
 	override.orig_handler = orig->internal_function.handler;
 	override.original.internal_function.handler = shadow_generic_override;
 	override.argno = argno;
 	override.argtype = argtype;
 	// @todo wrong ?
-	zend_hash_str_update_ptr(table, fname, fname_len, &override);
+	zend_hash_update_ptr(table, fname_zs, &override);
 	fprintf(stderr, "Generic override - %s\n", fname);
+    zend_string_release(fname_zs);
 }
 
 /* {{{ PHP_MINIT_FUNCTION
@@ -1115,6 +1122,7 @@ static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS)
 		orig_touch(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
+    if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_TOUCH) fprintf(stderr, "Touch*** \n");
 	instname = template_to_instance(filename, 0 TSRMLS_CC);
 
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_TOUCH) fprintf(stderr, "Touching %s (%s)\n", filename, instname);
@@ -1123,6 +1131,7 @@ static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS)
 		shadow_call_replace_name(0, instname, orig_touch, INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
+    if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_TOUCH) fprintf(stderr, "Touch: Using original touch function\n");
 	orig_touch(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 }
 
