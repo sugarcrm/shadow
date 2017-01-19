@@ -45,6 +45,7 @@ void shadow_cache_set_id(zend_string *template, zend_string *instance TSRMLS_DC)
 	} else {
 		SHADOW_G(segment_id) = Z_LVAL_P(segment_zv);
 	}
+    zend_string_release(segname_zs);
 	efree(segname);
 }
 
@@ -69,10 +70,12 @@ int shadow_cache_get(const char *name, char **entry TSRMLS_DC)
         }
 		*entry = estrdup(Z_STR_P(centry)->val);
 		efree(segname);
+        zend_string_release(segname_zs);
 		return SUCCESS;
 	} else {
 		*entry = NULL;
 		efree(segname);
+        zend_string_release(segname_zs);
 		return FAILURE;
 	}
 }
@@ -96,6 +99,7 @@ void shadow_cache_put(const char *name, const char *entry TSRMLS_DC)
 	ZVAL_STR(&entry_zv, entry_zs);
 	zend_hash_update(&SHADOW_G(cache), segname_zs, &entry_zv);
 	efree(segname);
+    zend_string_release(segname_zs);
 }
 
 void shadow_cache_remove(const char *name TSRMLS_DC)
