@@ -58,6 +58,7 @@ ZEND_BEGIN_MODULE_GLOBALS(shadow)
 	int instance_only_count;
 	char *curdir;
 	HashTable cache;
+	HashTable replaced_function_table;
 	uint segment_id;
 ZEND_END_MODULE_GLOBALS(shadow)
 
