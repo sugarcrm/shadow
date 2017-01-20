@@ -29,7 +29,6 @@
 ZEND_DECLARE_MODULE_GLOBALS(shadow)
 
 typedef struct _shadow_function {
-	zend_function original;
 	void (*orig_handler)(INTERNAL_FUNCTION_PARAMETERS);
 	int argno;
 	int argtype;
@@ -115,6 +114,8 @@ static PHP_GINIT_FUNCTION(shadow)
 {
 	memset(shadow_globals, 0, sizeof(zend_shadow_globals));
 	zend_hash_init(&shadow_globals->cache, 10, NULL, NULL, 1); // persistent!
+	zend_hash_init(&shadow_globals->replaced_function_table, 10, NULL, NULL, 1);
+	// initial size 10 here is a common sense - look at the number of overriden functions
 }
 /* }}} */
 
@@ -122,6 +123,7 @@ static PHP_GINIT_FUNCTION(shadow)
  */
 static PHP_GSHUTDOWN_FUNCTION(shadow)
 {
+	zend_hash_destroy(&shadow_globals->replaced_function_table);
 	zend_hash_destroy(&shadow_globals->cache);
 }
 /* }}} */
@@ -177,20 +179,21 @@ PHP_INI_END()
 static void shadow_override_function(char *fname, size_t fname_len, int argno, int argtype)
 {
 	zend_function *orig;
-	shadow_function override;
+	shadow_function *override = pemalloc(sizeof(shadow_function), 1);
 	HashTable *table = CG(function_table);
 	char *col;
+	zend_string *fname_full = zend_string_init(fname, fname_len, 1);
+	zend_class_entry *cls;
 
 	if((col = strchr(fname, ':')) != NULL) {
-		zend_class_entry **cls;
 		*col = '\0';
-		zend_string *fname_zs = zend_string_init(fname, col - fname + 1, 0);
+		zend_string *fname_zs = zend_string_init(fname, col - fname, 0);
 		if ((cls = zend_hash_find_ptr(CG(class_table), fname_zs)) == NULL) {
 			return;
 		}
 
         zend_string_release(fname_zs);
-		table = &((*cls)->function_table);
+		table = &cls->function_table;
 		fname = col+2;
 		fname_len = strlen(fname);
 	}
@@ -201,16 +204,16 @@ static void shadow_override_function(char *fname, size_t fname_len, int argno, i
 		zend_string_release(fname_zs);
 		return;
 	}
-    
-	memcpy(&override, orig, sizeof(zend_function));
-	override.orig_handler = orig->internal_function.handler;
-	override.original.internal_function.handler = shadow_generic_override;
-	override.argno = argno;
-	override.argtype = argtype;
-	// @todo wrong ?
-	zend_hash_update_ptr(table, fname_zs, &override);
-	fprintf(stderr, "Generic override - %s\n", fname);
+
+	override->orig_handler = orig->internal_function.handler;
+	override->argno = argno;
+	override->argtype = argtype;
+	zend_hash_add_new_ptr(&SHADOW_G(replaced_function_table), fname_full, override);
+
+	orig->internal_function.handler = shadow_generic_override;
+
     zend_string_release(fname_zs);
+    zend_string_release(fname_full);
 }
 
 /* {{{ PHP_MINIT_FUNCTION
@@ -992,7 +995,7 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *pa
 		zend_hash_str_add_new_ptr(mergedata, entry.d_name, strlen(entry.d_name), &dummy);
 	}
 	while(php_stream_readdir(instdir, &entry)) {
-		zend_hash_str_add_new_ptr(mergedata, entry.d_name, strlen(entry.d_name), &dummy);
+		zend_hash_str_update_ptr(mergedata, entry.d_name, strlen(entry.d_name), &dummy);
 	}
 	zend_hash_internal_pointer_reset(mergedata);
 	php_stream_free(instdir, PHP_STREAM_FREE_CLOSE);
@@ -1013,13 +1016,13 @@ static size_t shadow_dirstream_read(php_stream *stream, char *buf, size_t count 
 	php_stream_dirent *ent = (php_stream_dirent*)buf;
 	HashTable *mergedata = (HashTable *)stream->abstract;
 	zend_string *name = NULL;
-	ulong num;
+	zend_ulong num;
 
 	/* avoid problems if someone mis-uses the stream */
 	if (count != sizeof(php_stream_dirent))
 		return 0;
 
-	if (zend_hash_get_current_key_ex(mergedata, &name, &num, NULL) != HASH_KEY_IS_STRING) {
+	if (zend_hash_get_current_key(mergedata, &name, &num) != HASH_KEY_IS_STRING) {
 		return 0;
 	}
 	if(!ZSTR_VAL(name) || !ZSTR_LEN(name)) {
@@ -1069,7 +1072,7 @@ static int shadow_call_replace_name_ex(zval *name, char *repname, void (*orig_fu
 	zend_string *old_name;
 	zend_string *new_name;
 	old_name = Z_STR_P(name);
-	new_name = zend_string_init(repname, strlen(repname), 0);
+	new_name = zend_string_init(repname, strlen(repname), 1);
 	efree(repname);
 	Z_STR_P(name) = new_name;
 	orig_func(INTERNAL_FUNCTION_PARAM_PASSTHRU);
@@ -1453,8 +1456,22 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 
 static void shadow_generic_override(INTERNAL_FUNCTION_PARAMETERS)
 {
-	fprintf(stderr, "trying Overriding\n");
-	shadow_function *func = (shadow_function *)EG(current_execute_data)->call->func;
+	zend_class_entry *ce = EG(current_execute_data)->func->common.scope;
+	zend_string *fname_full;
+	if (ce) {
+		char *fname_full_c;
+		size_t len = spprintf(&fname_full_c, 0, "%s::%s", ZSTR_VAL(ce->name), ZSTR_VAL(EG(current_execute_data)->func->common.function_name));
+		zend_str_tolower(fname_full_c, len);
+		fname_full = zend_string_init(fname_full_c, len, 0);
+		efree(fname_full_c);
+	} else {
+		fname_full = EG(current_execute_data)->func->common.function_name;
+	}
+	shadow_function *func;
+	if ((func = zend_hash_find_ptr(&SHADOW_G(replaced_function_table), fname_full)) == NULL) {
+		zend_string_release(fname_full);
+		return;
+	}
 	zval *old_name, *new_name;
 	zval *name;
 	int opts = OPT_CHECK_EXISTS|OPT_RETURN_INSTANCE;
@@ -1462,17 +1479,20 @@ static void shadow_generic_override(INTERNAL_FUNCTION_PARAMETERS)
 
 	if(!SHADOW_ENABLED()) {
 		func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		zend_string_release(fname_full);
 		return;
 	}
 
 	name = shadow_get_arg(func->argno TSRMLS_CC);
 	if (!name || Z_TYPE_P(name) != IS_STRING) {
 		func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		zend_string_release(fname_full);
 		return;
 	}
 	/* not our path - don't mess with it */
 	if (!shadow_stream_check(Z_STRVAL_P(name))) {
 		func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		zend_string_release(fname_full);
 		return;
 	}
 	/* try to translate */
@@ -1481,13 +1501,17 @@ static void shadow_generic_override(INTERNAL_FUNCTION_PARAMETERS)
 		opts = OPT_RETURN_INSTANCE;
 	}
 	instname = template_to_instance(Z_STRVAL_P(name), opts TSRMLS_CC);
-	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OVERRIDE) fprintf(stderr, "Overriding %s: %s (%s)\n", ZSTR_VAL(func->original.internal_function.function_name), Z_STRVAL_P(name), instname);
+	if (SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OVERRIDE) {
+		fprintf(stderr, "Overriding %s: %s (%s)\n", ZSTR_VAL(fname_full), Z_STRVAL_P(name), instname);
+	}
 	/* we didn't find better name, use original */
 	if(!instname) {
 		func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		zend_string_release(fname_full);
 		return;
 	}
 	shadow_call_replace_name_ex(name, instname, func->orig_handler, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+	zend_string_release(fname_full);
 }
 
 /*
