@@ -78,7 +78,7 @@ class SugarShadow
             if (! file_exists($info['path'])) {
                 die('<h3>Invalid SugarCRM Instance</h3>');
             }
-            shadow($templatePath, $info['path'], array('cache', 'upload', 'config.php'));
+            shadow($templatePath, $info['path'], array('cache', 'upload', 'config.php', 'config_override.php'));
         }
     }
 }
