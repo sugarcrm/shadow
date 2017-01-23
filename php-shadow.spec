@@ -46,6 +46,8 @@ rm -rf $RPM_BUILD_ROOT
 %{php_extdir}/shadow.so
 
 %changelog
+* Mon Jan 23 2017 Alex Vlasov <avlasov@sugarcrm.com> - 0.5.0
+- PHP 7
 * Wed Oct  5 2016 Jason Corley <jcorley@sugarcrm.com> - 0.4.0
 - bump version to 0.4.0, PHP 5.6 support added
 * Fri May 22 2015 Michael Gusev <mgusev@sugarcrm.com> - 0.3.12
