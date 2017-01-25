@@ -1,15 +1,37 @@
 language: php
-sudo: true
+sudo: yes
+dist: trusty
 
-php:
-  - '5.4'
-  - '5.5'
-  - '5.6'
+matrix:
+  allow_failures:
+    - env: PHPVER="7.1.1"
+
+env:
+  - PHPVER="5.4.29"
+  - PHPVER="5.5.38"
+  - PHPVER="5.6.30"
+  - PHPVER="7.1.1"
+
+# This replaces the travis supplied phpbuild which defaults to ZTS enabled
+# builds.  Since we are replacing using the same config, we don't have to add
+# the env stuff.
+install:
+  - rm -rf ~/.phpenv
+  - sudo apt-get clean
+  - sudo apt-get update
+  - sudo apt-get purge --auto-remove mysql-client-5.6 mysql-client-core-5.6 mysql-server-5.6 mysql-server-core-5.6
+  - sudo rm -rf /var/lib/mysql
+  - sudo apt-get build-dep php5
+  - sudo apt-get install git libmcrypt-dev libreadline-dev
+  - curl -L http://git.io/phpenv-installer | bash
+  - travis_wait phpenv install "${PHPVER}"
+  - phpenv global "${PHPVER}"
+  - phpenv rehash
 
 before_script:
-  - .travis/php-setup.sh
+  - php-config --extension-dir
   - phpize
-  - ./configure --with-php-config=php-config
+  - ./configure
   - make
   - sed -i.stock -r -e 's/!mail_qa_team\(\$[[:alnum:]_]+,[[:space:]]*\$[[:alnum:]_]+,[[:space:]]*\$[[:alnum:]_]+\)/true/' run-tests.php
   - sed -i.stock -e "s/\$ini_settings\['extension'\]\[\] = \$ext_dir \. DIRECTORY_SEPARATOR \. \$req_ext \. '\.' \. PHP_SHLIB_SUFFIX;/array_unshift\(\$ini_settings\['extension'\], \$ext_dir \. DIRECTORY_SEPARATOR \. \$req_ext \. '\.' \. PHP_SHLIB_SUFFIX\);/" run-tests.php
