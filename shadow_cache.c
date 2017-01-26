@@ -100,6 +100,7 @@ void shadow_cache_put(const char *name, const char *entry TSRMLS_DC)
 	zend_hash_update(&SHADOW_G(cache), segname_zs, &entry_zv);
 	efree(segname);
     zend_string_release(segname_zs);
+    zend_string_release(entry_zs);
 }
 
 void shadow_cache_remove(const char *name TSRMLS_DC)
