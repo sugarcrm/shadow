@@ -45,7 +45,7 @@ void shadow_cache_set_id(zend_string *template, zend_string *instance TSRMLS_DC)
 	} else {
 		SHADOW_G(segment_id) = Z_LVAL_P(segment_zv);
 	}
-    zend_string_release(segname_zs);
+	zend_string_release(segname_zs);
 	efree(segname);
 }
 
@@ -66,7 +66,8 @@ int shadow_cache_get(const char *name, char **entry TSRMLS_DC)
 	zend_string *segname_zs = zend_string_init(segname, namelen, 0);
 	if ((centry = zend_hash_find(&SHADOW_G(cache), segname_zs)) != NULL) {
         if(Z_STRLEN_P(centry) == 0){
-            return FAILURE;
+            *entry = NULL;
+            return SUCCESS;
         }
 		*entry = estrdup(Z_STR_P(centry)->val);
 		efree(segname);
@@ -95,12 +96,11 @@ void shadow_cache_put(const char *name, const char *entry TSRMLS_DC)
 	}
 	namelen = shadow_cache_segmented_name(&segname, name TSRMLS_CC);
 	zend_string *segname_zs = zend_string_init(segname, namelen, 1);
-	entry_zs = zend_string_init(entry, strlen(entry), 0);
+	entry_zs = zend_string_init(entry, strlen(entry), 1);
 	ZVAL_STR(&entry_zv, entry_zs);
 	zend_hash_update(&SHADOW_G(cache), segname_zs, &entry_zv);
 	efree(segname);
-    zend_string_release(segname_zs);
-    zend_string_release(entry_zs);
+	zend_string_release(segname_zs);
 }
 
 void shadow_cache_remove(const char *name TSRMLS_DC)
