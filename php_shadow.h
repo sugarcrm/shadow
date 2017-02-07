@@ -52,14 +52,13 @@ ZEND_BEGIN_MODULE_GLOBALS(shadow)
 	unsigned long cache_size;
 	char *override;
 	/* runtime data */
-	char *template;
-	char *instance;
-	int template_len;
-	int instance_len;
+	zend_string *template;
+	zend_string *instance;
 	char **instance_only;
 	int instance_only_count;
 	char *curdir;
 	HashTable cache;
+	HashTable replaced_function_table;
 	uint segment_id;
 ZEND_END_MODULE_GLOBALS(shadow)
 
@@ -69,7 +68,7 @@ ZEND_END_MODULE_GLOBALS(shadow)
 #define SHADOW_G(v) (shadow_globals.v)
 #endif
 
-#define SHADOW_VERSION "0.4.1"
+#define SHADOW_VERSION "0.5.0"
 
 ZEND_EXTERN_MODULE_GLOBALS(shadow)
 

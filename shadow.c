@@ -29,7 +29,6 @@
 ZEND_DECLARE_MODULE_GLOBALS(shadow)
 
 typedef struct _shadow_function {
-	zend_function original;
 	void (*orig_handler)(INTERNAL_FUNCTION_PARAMETERS);
 	int argno;
 	int argtype;
@@ -63,7 +62,7 @@ static php_stream_ops shadow_dirstream_ops = {
 };
 
 static php_stream_wrapper_ops *plain_ops;
-static char *(*original_zend_resolve_path)(const char *filename, int filename_len TSRMLS_DC);
+zend_string *(*original_zend_resolve_path)(const char *filename, int filename_len);
 static void (*orig_touch)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_chmod)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_chdir)(INTERNAL_FUNCTION_PARAMETERS);
@@ -72,17 +71,17 @@ static void (*orig_realpath)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_is_writable)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_glob)(INTERNAL_FUNCTION_PARAMETERS);
 
-static char *shadow_resolve_path(const char *filename, int filename_len TSRMLS_DC);
+zend_string *shadow_resolve_path(const char *filename, int filename_len);
 static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, const char *filename, const char *mode,
-	int options, char **opened_path, php_stream_context *context STREAMS_DC TSRMLS_DC);
+	int options, zend_string **opened_path, php_stream_context *context STREAMS_DC);
 static int shadow_stat(php_stream_wrapper *wrapper, const char *url, int flags, php_stream_statbuf *ssb,
-	php_stream_context *context TSRMLS_DC);
-static int shadow_unlink(php_stream_wrapper *wrapper, const char *url, int options, php_stream_context *context TSRMLS_DC);
+	php_stream_context *context);
+static int shadow_unlink(php_stream_wrapper *wrapper, const char *url, int options, php_stream_context *context);
 
-static int shadow_rename(php_stream_wrapper *wrapper, const char *url_from, const char *url_to, int options, php_stream_context *context TSRMLS_DC);
-static int shadow_mkdir(php_stream_wrapper *wrapper, const char *dir, int mode, int options, php_stream_context *context TSRMLS_DC);
-static int shadow_rmdir(php_stream_wrapper *wrapper, const char *url, int options, php_stream_context *context TSRMLS_DC);
-static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *path, const char *mode, int options, char **opened_path, php_stream_context *context STREAMS_DC TSRMLS_DC);
+static int shadow_rename(php_stream_wrapper *wrapper, const char *url_from, const char *url_to, int options, php_stream_context *context);
+static int shadow_mkdir(php_stream_wrapper *wrapper, const char *dir, int mode, int options, php_stream_context *context);
+static int shadow_rmdir(php_stream_wrapper *wrapper, const char *url, int options, php_stream_context *context);
+static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *path, const char *mode, int options, zend_string **opened_path, php_stream_context *context STREAMS_DC);
 static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS);
 static void shadow_chdir(INTERNAL_FUNCTION_PARAMETERS);
@@ -115,6 +114,8 @@ static PHP_GINIT_FUNCTION(shadow)
 {
 	memset(shadow_globals, 0, sizeof(zend_shadow_globals));
 	zend_hash_init(&shadow_globals->cache, 10, NULL, NULL, 1); // persistent!
+	zend_hash_init(&shadow_globals->replaced_function_table, 10, NULL, NULL, 1);
+	// initial size 10 here is a common sense - look at the number of overriden functions
 }
 /* }}} */
 
@@ -122,6 +123,7 @@ static PHP_GINIT_FUNCTION(shadow)
  */
 static PHP_GSHUTDOWN_FUNCTION(shadow)
 {
+	zend_hash_destroy(&shadow_globals->replaced_function_table);
 	zend_hash_destroy(&shadow_globals->cache);
 }
 /* }}} */
@@ -161,44 +163,57 @@ PHP_INI_BEGIN()
 PHP_INI_END()
 /* }}} */
 
-#define SHADOW_CONSTANT(C) 		REGISTER_LONG_CONSTANT(#C, C, CONST_CS)
+#define SHADOW_CONSTANT(C) 		REGISTER_LONG_CONSTANT(#C, C, CONST_CS | CONST_PERSISTENT)
 
 #define SHADOW_OVERRIDE(func) \
 	orig_##func = NULL; \
-	if (zend_hash_find(CG(function_table), #func, sizeof(#func), (void **)&orig) == SUCCESS) { \
+     	zend_string * key_##func = zend_string_init(#func, strlen(#func), 0);\
+	if ((orig = zend_hash_find_ptr(CG(function_table), key_##func)) != NULL) { \
         orig_##func = orig->internal_function.handler; \
         orig->internal_function.handler = shadow_##func; \
-	}
+	} \
+     	zend_string_release(key_##func);
 
 #define SHADOW_ENABLED() (SHADOW_G(enabled) != 0 && SHADOW_G(instance) != NULL && SHADOW_G(template) != NULL)
 
-static void shadow_override_function(char *fname, int fname_len, int argno, int argtype)
+static void shadow_override_function(char *fname, size_t fname_len, int argno, int argtype)
 {
 	zend_function *orig;
-	shadow_function override;
+	shadow_function *override = pemalloc(sizeof(shadow_function), 1);
 	HashTable *table = CG(function_table);
 	char *col;
+	zend_string *fname_full = zend_string_init(fname, fname_len, 1);
+	zend_class_entry *cls;
 
 	if((col = strchr(fname, ':')) != NULL) {
-		zend_class_entry **cls;
 		*col = '\0';
-		if(zend_hash_find(CG(class_table), fname, col-fname+1, (void **)&cls) != SUCCESS) {
+		zend_string *fname_zs = zend_string_init(fname, col - fname, 0);
+		if ((cls = zend_hash_find_ptr(CG(class_table), fname_zs)) == NULL) {
 			return;
 		}
-		table = &((*cls)->function_table);
+
+        zend_string_release(fname_zs);
+		table = &cls->function_table;
 		fname = col+2;
 		fname_len = strlen(fname);
 	}
 
-	if (zend_hash_find(table, fname, fname_len+1, (void **)&orig) != SUCCESS) {
+    zend_string *fname_zs = zend_string_init(fname, strlen(fname), 0);
+
+	if ((orig = zend_hash_find_ptr(table, fname_zs)) == NULL) {
+		zend_string_release(fname_zs);
 		return;
 	}
-	memcpy(&override, orig, sizeof(zend_function));
-	override.orig_handler = orig->internal_function.handler;
-	override.original.internal_function.handler = shadow_generic_override;
-	override.argno = argno;
-	override.argtype = argtype;
-	zend_hash_update(table, fname, fname_len+1, &override, sizeof(shadow_function), NULL);
+
+	override->orig_handler = orig->internal_function.handler;
+	override->argno = argno;
+	override->argtype = argtype;
+	zend_hash_add_new_ptr(&SHADOW_G(replaced_function_table), fname_full, override);
+
+	orig->internal_function.handler = shadow_generic_override;
+
+    zend_string_release(fname_zs);
+    zend_string_release(fname_full);
 }
 
 /* {{{ PHP_MINIT_FUNCTION
@@ -253,7 +268,7 @@ PHP_MINIT_FUNCTION(shadow)
 	 */
 	if(SHADOW_G(enabled) && SHADOW_G(override) && SHADOW_G(override)[0] != '\0') {
 		char *over = SHADOW_G(override);
-		int over_len;
+		size_t over_len;
 		char c;
 		int argno;
 		int argtype;
@@ -374,7 +389,7 @@ PHP_FUNCTION(shadow)
 {
 	char *temp = NULL;
 	char *inst = NULL;
-	int temp_len, inst_len;
+	size_t temp_len, inst_len;
 	HashTable *instance_only = NULL; /* paths relative to template root */
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|h", &temp, &temp_len, &inst, &inst_len, &instance_only) == FAILURE) {
@@ -396,7 +411,6 @@ PHP_FUNCTION(shadow)
 	if(!SHADOW_G(template)) {
 		RETURN_FALSE;
 	}
-	SHADOW_G(template_len) = strlen(SHADOW_G(template));
 	SHADOW_G(instance) = zend_resolve_path(inst, inst_len);
 	if(!SHADOW_G(instance)) {
 		efree(SHADOW_G(template));
@@ -404,21 +418,17 @@ PHP_FUNCTION(shadow)
 		RETURN_FALSE;
 	}
 
-	SHADOW_G(instance_len) = strlen(SHADOW_G(instance));
 	shadow_cache_set_id(SHADOW_G(template), SHADOW_G(instance));
 	if(instance_only) {
 		int i = 0;
-		HashPosition pos;
-		zval **item;
+		zval *item;
 
 		SHADOW_G(instance_only_count) = zend_hash_num_elements(instance_only);
 		SHADOW_G(instance_only) = ecalloc(SHADOW_G(instance_only_count), sizeof(char *));
-		zend_hash_internal_pointer_reset_ex(instance_only, &pos);
-			while(zend_hash_get_current_data_ex(instance_only, (void **)&item, &pos) == SUCCESS) {
-			convert_to_string(*item);
-			SHADOW_G(instance_only)[i++] = estrndup(Z_STRVAL_PP(item), Z_STRLEN_PP(item));
-			zend_hash_move_forward_ex(instance_only, &pos);
-		}
+		ZEND_HASH_FOREACH_VAL(instance_only, item) {
+			convert_to_string(item);
+			SHADOW_G(instance_only)[i++] = estrndup(Z_STRVAL_P(item), Z_STRLEN_P(item));
+		} ZEND_HASH_FOREACH_END();
 	}
 
 	RETURN_TRUE;
@@ -429,7 +439,7 @@ PHP_FUNCTION(shadow)
    Retrieve current shadow configuration */
 PHP_FUNCTION(shadow_get_config)
 {
-	zval *instance_only;
+	zval instance_only;
 	int i;
 
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -441,14 +451,13 @@ PHP_FUNCTION(shadow_get_config)
 	}
 
 	array_init_size(return_value, 3);
-	add_assoc_string(return_value, "template", SHADOW_G(template)?SHADOW_G(template):"", 1);
-	add_assoc_string(return_value, "instance", SHADOW_G(instance)?SHADOW_G(instance):"", 1);
-	ALLOC_INIT_ZVAL(instance_only);
-	array_init_size(instance_only, SHADOW_G(instance_only_count));
+	add_assoc_string(return_value, "template", SHADOW_G(template) ? SHADOW_G(template)->val : "");
+	add_assoc_string(return_value, "instance", SHADOW_G(instance) ? SHADOW_G(instance)->val : "");
+	array_init_size(&instance_only, SHADOW_G(instance_only_count));
 	for(i=0;i<SHADOW_G(instance_only_count);i++) {
-		add_next_index_string(instance_only, SHADOW_G(instance_only)[i], 1);
+		add_next_index_string(&instance_only, SHADOW_G(instance_only)[i]);
 	}
-	add_assoc_zval(return_value, "instance_only", instance_only);
+	add_assoc_zval(return_value, "instance_only", &instance_only);
 }
 /* }}} */
 
@@ -514,21 +523,22 @@ static int is_instance_only(const char *filename TSRMLS_DC)
 		fnamelen = strlen(realpath);
 	}
 
-	if(SHADOW_G(template_len)+1 <= fnamelen &&
-		memcmp(SHADOW_G(template), filename, SHADOW_G(template_len)) == 0 &&
-		IS_SLASH(filename[SHADOW_G(template_len)])
+	if ((ZSTR_LEN(SHADOW_G(template)) + 1 <= fnamelen)
+		&& (memcmp(ZSTR_VAL(SHADOW_G(template)), filename, ZSTR_LEN(SHADOW_G(template))) == 0)
+		&& IS_SLASH(filename[ZSTR_LEN(SHADOW_G(template))])
 	) {
-		result = instance_only_subdir(filename+SHADOW_G(template_len)+1 TSRMLS_CC);
+		result = instance_only_subdir(filename + ZSTR_LEN(SHADOW_G(template)) + 1 TSRMLS_CC);
 		if(realpath) {
 			efree(realpath);
 		}
 		return result;
 	}
 
-	if(SHADOW_G(instance_len)+1 <= fnamelen &&
-		memcmp(SHADOW_G(instance), filename, SHADOW_G(instance_len)) == 0 &&
-		IS_SLASH(filename[SHADOW_G(instance_len)])) {
-		result = instance_only_subdir(filename+SHADOW_G(instance_len)+1 TSRMLS_CC);
+	if ((ZSTR_LEN(SHADOW_G(instance)) + 1 <= fnamelen)
+		&& (memcmp(ZSTR_VAL(SHADOW_G(instance)), filename, ZSTR_LEN(SHADOW_G(instance))) == 0)
+		&& IS_SLASH(filename[ZSTR_LEN(SHADOW_G(instance))])
+	) {
+		result = instance_only_subdir(filename + ZSTR_LEN(SHADOW_G(instance)) + 1 TSRMLS_CC);
 		if(realpath) {
 			efree(realpath);
 		}
@@ -576,10 +586,16 @@ static char *get_full_path(const char *filename TSRMLS_DC)
 static inline char *instance_to_template(const char *instname, int len TSRMLS_DC)
 {
 	char *newname = NULL;
-	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), instname, len)) {
+	if (is_subdir_of(ZSTR_VAL(SHADOW_G(template)), ZSTR_LEN(SHADOW_G(template)), instname, len)) {
 		newname = estrndup(instname, len);
-	} else if(is_subdir_of(SHADOW_G(instance), SHADOW_G(instance_len), instname, len)) {
-		spprintf(&newname, MAXPATHLEN, "%s/%s", SHADOW_G(template), instname+SHADOW_G(instance_len)+1);
+	} else if (is_subdir_of(ZSTR_VAL(SHADOW_G(instance)), ZSTR_LEN(SHADOW_G(instance)), instname, len)) {
+		spprintf(
+			&newname,
+			MAXPATHLEN,
+			"%s/%s",
+			ZSTR_VAL(SHADOW_G(template)),
+			instname + ZSTR_LEN(SHADOW_G(instance)) + 1
+		);
 	}
 	return newname;
 }
@@ -617,7 +633,7 @@ static char *template_to_instance(const char *filename, int options TSRMLS_DC)
 		fnamelen--;
 	}
 
-	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), realpath, fnamelen)) {
+	if (is_subdir_of(ZSTR_VAL(SHADOW_G(template)), ZSTR_LEN(SHADOW_G(template)), realpath, fnamelen)) {
 		if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "In template: %s\n", realpath);
 		if((options & OPT_CHECK_EXISTS) && shadow_cache_get(realpath, &newname) == SUCCESS) {
 			if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "Path check from cache: %s => %s\n", realpath, newname);
@@ -627,8 +643,16 @@ static char *template_to_instance(const char *filename, int options TSRMLS_DC)
 			return newname;
 		}
 		/* starts with template - rewrite to instance */
-		spprintf(&newname, MAXPATHLEN, "%s/%s", SHADOW_G(instance), realpath+SHADOW_G(template_len)+1);
-		if((options & OPT_CHECK_EXISTS) && !instance_only_subdir(realpath+SHADOW_G(template_len)+1 TSRMLS_CC)) {
+		spprintf(
+			&newname,
+			MAXPATHLEN,
+			"%s/%s",
+			ZSTR_VAL(SHADOW_G(instance)),
+			realpath + ZSTR_LEN(SHADOW_G(template)) + 1
+		);
+		if ((options & OPT_CHECK_EXISTS)
+			&& !instance_only_subdir(realpath + ZSTR_LEN(SHADOW_G(template)) + 1 TSRMLS_CC)
+		) {
 			if(VCWD_ACCESS(newname, F_OK) != 0) {
 				/* file does not exist */
 				efree(newname);
@@ -639,13 +663,21 @@ static char *template_to_instance(const char *filename, int options TSRMLS_DC)
 		if(!(options & OPT_SKIP_CACHE)) {
 			shadow_cache_put(realpath, newname);
 		}
-	} else if(is_subdir_of(SHADOW_G(instance), SHADOW_G(instance_len), realpath, fnamelen)) {
+	} else if (is_subdir_of(ZSTR_VAL(SHADOW_G(instance)), ZSTR_LEN(SHADOW_G(instance)), realpath, fnamelen)) {
 		if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "In instance: %s\n", realpath);
 		if((options & OPT_CHECK_EXISTS)) {
 			/* starts with instance, may want to check template too */
-			if(!instance_only_subdir(realpath+SHADOW_G(instance_len)+1 TSRMLS_CC) && VCWD_ACCESS(realpath, F_OK) != 0) {
+			if (!instance_only_subdir(realpath + ZSTR_LEN(SHADOW_G(instance)) + 1 TSRMLS_CC)
+				&& VCWD_ACCESS(realpath, F_OK) != 0
+			) {
 				/* does not exist, go to template */
-				spprintf(&newname, MAXPATHLEN, "%s/%s", SHADOW_G(template), realpath+SHADOW_G(instance_len)+1);
+				spprintf(
+					&newname,
+					MAXPATHLEN,
+					"%s/%s",
+					ZSTR_VAL(SHADOW_G(template)),
+					realpath + ZSTR_LEN(SHADOW_G(instance)) + 1
+				);
 			} else {
 				/* TODO: use realpath here too? */
 				if((options & OPT_RETURN_INSTANCE)) {
@@ -662,8 +694,12 @@ static char *template_to_instance(const char *filename, int options TSRMLS_DC)
 			efree(realpath);
 			realpath = NULL;
 		}
-	} else if((options & OPT_RETURN_INSTANCE) && strncmp(SHADOW_G(instance), realpath, SHADOW_G(instance_len)) == 0
-			&& (realpath[SHADOW_G(instance_len)] == '\0' || IS_SLASH(realpath[SHADOW_G(instance_len)]))) {
+	} else if (
+		(options & OPT_RETURN_INSTANCE)
+		&& (strncmp(ZSTR_VAL(SHADOW_G(instance)), realpath, ZSTR_LEN(SHADOW_G(instance))) == 0)
+		&& ((realpath[ZSTR_LEN(SHADOW_G(instance))] == '\0')
+			|| IS_SLASH(realpath[ZSTR_LEN(SHADOW_G(instance))]))
+	) {
 		/* it is the instance dir itself - return it */
 		newname = estrndup(realpath, fnamelen);
 	}
@@ -682,9 +718,9 @@ static void clean_cache_dir(const char *clean_dirname TSRMLS_DC)
 	if(!dirname) return; /* not an instance dir */
 	len = strlen(dirname);
 	shadow_cache_remove(dirname);
-	while(len > SHADOW_G(template_len)) {
+	while (len > ZSTR_LEN(SHADOW_G(template))) {
 		char c;
-		while(len > SHADOW_G(template_len) && !IS_SLASH(dirname[len])) len--;
+		while (len > ZSTR_LEN(SHADOW_G(template)) && !IS_SLASH(dirname[len])) len--;
 		/* remove both one with slash at the end and without it, just in case */
 		dirname[len+1] = '\0';
 		shadow_cache_remove(dirname);
@@ -711,22 +747,24 @@ static void ensure_dir_exists(char *pathname, php_stream_wrapper *wrapper, php_s
 	pathname[dir_len] = '/'; /* restore full path */
 }
 
-static char *shadow_resolve_path(const char *filename, int filename_len TSRMLS_DC)
+zend_string *shadow_resolve_path(const char *filename, int filename_len)
 {
-    char *result = template_to_instance(filename, OPT_CHECK_EXISTS TSRMLS_CC);
+    char *shadow_result = template_to_instance(filename, OPT_CHECK_EXISTS TSRMLS_CC);
+    zend_string *result = NULL;
     // in any case we have to call original resolver because that can be reimplemented by opcache for example
-    if (result) {
-        int result_length = strlen(result);
-        result = original_zend_resolve_path(result, result_length TSRMLS_CC);
+    if (shadow_result) {
+        result = original_zend_resolve_path(shadow_result, strlen(shadow_result));
     } else {
-        result = original_zend_resolve_path(filename, filename_len TSRMLS_CC);
+        result = original_zend_resolve_path(filename, filename_len);
     }
-    if(SHADOW_G(debug) & SHADOW_DEBUG_RESOLVE) fprintf(stderr, "Resolve: %s -> %s\n", filename, result);
+    if (SHADOW_G(debug) & SHADOW_DEBUG_RESOLVE) {
+		fprintf(stderr, "Resolve: %s -> %s\n", filename, ZSTR_VAL(result));
+    }
     return result;
 }
 
 static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, const char *filename, const char *mode,
-	int options, char **opened_path, php_stream_context *context STREAMS_DC TSRMLS_DC)
+	int options, zend_string **opened_path, php_stream_context *context STREAMS_DC)
 {
 	int flags;
 	php_stream *res;
@@ -740,7 +778,7 @@ static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, const char 
 			if(instname) {
 				if(SHADOW_G(debug) & SHADOW_DEBUG_OPEN) fprintf(stderr, "Opening instead: %s %s\n", instname, mode);
 				ensure_dir_exists(instname, wrapper, context TSRMLS_CC);
-				res = plain_ops->stream_opener(wrapper, instname, mode, options|STREAM_ASSUME_REALPATH, opened_path, context STREAMS_CC TSRMLS_CC);
+				res = plain_ops->stream_opener(wrapper, instname, mode, options|STREAM_ASSUME_REALPATH, opened_path, context STREAMS_CC);
 				if(!res && (SHADOW_G(debug) & SHADOW_DEBUG_FAIL)) {
 					fprintf(stderr, "Open FAIL: %s %s [%d]\n", instname, mode, errno);
 				}
@@ -752,7 +790,7 @@ static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, const char 
 			char *instname = template_to_instance(filename, OPT_CHECK_EXISTS TSRMLS_CC);
 			if(instname) {
 				if(SHADOW_G(debug) & SHADOW_DEBUG_OPEN) fprintf(stderr, "Opening instead: %s %s\n", instname, mode);
-		 		res = plain_ops->stream_opener(wrapper, instname, mode, options|STREAM_ASSUME_REALPATH, opened_path, context STREAMS_CC TSRMLS_CC);
+		 		res = plain_ops->stream_opener(wrapper, instname, mode, options|STREAM_ASSUME_REALPATH, opened_path, context STREAMS_CC);
 				if(!res && (SHADOW_G(debug) & SHADOW_DEBUG_FAIL)) {
 					fprintf(stderr, "Open FAIL: %s %s [%d]\n", instname, mode, errno);
 				}
@@ -776,7 +814,7 @@ static void adjust_stat(php_stream_statbuf *ssb)
 	}
 }
 
-static int shadow_stat(php_stream_wrapper *wrapper, const char *url, int flags, php_stream_statbuf *ssb, php_stream_context *context TSRMLS_DC)
+static int shadow_stat(php_stream_wrapper *wrapper, const char *url, int flags, php_stream_statbuf *ssb, php_stream_context *context)
 {
 	char *instname = template_to_instance(url, OPT_CHECK_EXISTS TSRMLS_CC);
 	int res;
@@ -796,7 +834,7 @@ static int shadow_stat(php_stream_wrapper *wrapper, const char *url, int flags, 
 	return res;
 }
 
-static int shadow_unlink(php_stream_wrapper *wrapper, const char *url, int options, php_stream_context *context TSRMLS_DC)
+static int shadow_unlink(php_stream_wrapper *wrapper, const char *url, int options, php_stream_context *context)
 {
 	char *instname = template_to_instance(url, 0 TSRMLS_CC);
 	int res;
@@ -818,7 +856,7 @@ static int shadow_unlink(php_stream_wrapper *wrapper, const char *url, int optio
 	return res;
 }
 
-static int shadow_rename(php_stream_wrapper *wrapper, const char *url_from, const char *url_to, int options, php_stream_context *context TSRMLS_DC)
+static int shadow_rename(php_stream_wrapper *wrapper, const char *url_from, const char *url_to, int options, php_stream_context *context)
 {
 	char *fromname = template_to_instance(url_from, OPT_CHECK_EXISTS TSRMLS_CC);
 	char *toname = template_to_instance(url_to, 0 TSRMLS_CC);
@@ -846,7 +884,7 @@ static int shadow_rename(php_stream_wrapper *wrapper, const char *url_from, cons
 	return res;
 }
 
-static int shadow_mkdir(php_stream_wrapper *wrapper, const char *dir, int mode, int options, php_stream_context *context TSRMLS_DC)
+static int shadow_mkdir(php_stream_wrapper *wrapper, const char *dir, int mode, int options, php_stream_context *context)
 {
 	char *instname = template_to_instance(dir, 0 TSRMLS_CC);
 	int res;
@@ -867,7 +905,7 @@ static int shadow_mkdir(php_stream_wrapper *wrapper, const char *dir, int mode, 
 	return res;
 }
 
-static int shadow_rmdir(php_stream_wrapper *wrapper, const char *url, int options, php_stream_context *context TSRMLS_DC)
+static int shadow_rmdir(php_stream_wrapper *wrapper, const char *url, int options, php_stream_context *context)
 {
 	char *instname = template_to_instance(url, 0 TSRMLS_CC);
 	int res;
@@ -885,7 +923,7 @@ static int shadow_rmdir(php_stream_wrapper *wrapper, const char *url, int option
 	return res;
 }
 
-static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *path, const char *mode, int options, char **opened_path, php_stream_context *context STREAMS_DC TSRMLS_DC)
+static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *path, const char *mode, int options, zend_string **opened_path, php_stream_context *context STREAMS_DC)
 {
 	char *instname;
 	php_stream *tempdir = NULL, *instdir, *mergestream;
@@ -923,13 +961,19 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *pa
 		return plain_ops->dir_opener(wrapper, path, mode, options, opened_path, context STREAMS_CC TSRMLS_CC);
 	}
 
-	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), instname, strlen(instname))) {
+	if (is_subdir_of(ZSTR_VAL(SHADOW_G(template)), ZSTR_LEN(SHADOW_G(template)), instname, strlen(instname))) {
 		/* instname is in a template, we don't need another template name */
 	} else {
-		if (strlen(instname) > SHADOW_G(instance_len)) {
-			spprintf(&templname, MAXPATHLEN, "%s/%s", SHADOW_G(template), instname+SHADOW_G(instance_len)+1);
+		if (strlen(instname) > ZSTR_LEN(SHADOW_G(instance))) {
+			spprintf(
+				&templname,
+				MAXPATHLEN,
+				"%s/%s",
+				ZSTR_VAL(SHADOW_G(template)),
+				instname + ZSTR_LEN(SHADOW_G(instance)) + 1
+			);
 		} else {
-			templname = estrdup(SHADOW_G(template));
+			templname = estrdup(ZSTR_VAL(SHADOW_G(template)));
 		}
 		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening templdir: %s\n", templname);
 		tempdir = plain_ops->dir_opener(wrapper, templname, mode, options&(~REPORT_ERRORS), opened_path, context STREAMS_CC TSRMLS_CC);
@@ -948,10 +992,10 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *pa
 	ALLOC_HASHTABLE(mergedata);
 	zend_hash_init(mergedata, 10, NULL, NULL, 0);
 	while(php_stream_readdir(tempdir, &entry)) {
-		zend_hash_add(mergedata, entry.d_name, strlen(entry.d_name), &dummy, sizeof(void *), NULL);
+		zend_hash_str_add_new_ptr(mergedata, entry.d_name, strlen(entry.d_name), &dummy);
 	}
 	while(php_stream_readdir(instdir, &entry)) {
-		zend_hash_add(mergedata, entry.d_name, strlen(entry.d_name), &dummy, sizeof(void *), NULL);
+		zend_hash_str_update_ptr(mergedata, entry.d_name, strlen(entry.d_name), &dummy);
 	}
 	zend_hash_internal_pointer_reset(mergedata);
 	php_stream_free(instdir, PHP_STREAM_FREE_CLOSE);
@@ -971,23 +1015,22 @@ static size_t shadow_dirstream_read(php_stream *stream, char *buf, size_t count 
 {
 	php_stream_dirent *ent = (php_stream_dirent*)buf;
 	HashTable *mergedata = (HashTable *)stream->abstract;
-	char *name = NULL;
-	int namelen = 0;
-	ulong num;
+	zend_string *name = NULL;
+	zend_ulong num;
 
 	/* avoid problems if someone mis-uses the stream */
 	if (count != sizeof(php_stream_dirent))
 		return 0;
 
-	if(zend_hash_get_current_key_ex(mergedata, &name, &namelen, &num, 0, NULL) != HASH_KEY_IS_STRING) {
+	if (zend_hash_get_current_key(mergedata, &name, &num) != HASH_KEY_IS_STRING) {
 		return 0;
 	}
-	if(!name || !namelen) {
+	if(!ZSTR_VAL(name) || !ZSTR_LEN(name)) {
 		return 0;
 	}
 	zend_hash_move_forward(mergedata);
 
-	PHP_STRLCPY(ent->d_name, name, sizeof(ent->d_name), namelen);
+	PHP_STRLCPY(ent->d_name, ZSTR_VAL(name), sizeof(ent->d_name), ZSTR_LEN(name));
 	return sizeof(php_stream_dirent);
 }
 
@@ -1007,29 +1050,35 @@ static int shadow_dirstream_rewind(php_stream *stream, off_t offset, int whence,
 /*
 Find Nth argument of a current function call
 */
-static zval **shadow_get_arg(int arg TSRMLS_DC)
+static zval *shadow_get_arg(int arg TSRMLS_DC)
 {
-	void **p;
-	int arg_count;
-
 	if(!EG(current_execute_data)) {
 		return NULL;
 	}
 
-	p = EG(current_execute_data)->function_state.arguments;
-	if(!p) {
+	zend_execute_data *ex = EG(current_execute_data);
+	if (arg >= ex->func->common.num_args) {
 		return NULL;
 	}
 
-	arg_count = (int)(zend_uintptr_t) *p;
-	if(arg >= arg_count) {
-		return NULL;
-	}
+	return ZEND_CALL_ARG(ex, arg + 1);
+}
 
-	p -= arg_count;
-	p += arg;
-
-	return (zval **)p;
+/*
+ * Call original function while replacing name parameter with repname
+ */
+static int shadow_call_replace_name_ex(zval *name, char *repname, void (*orig_func)(INTERNAL_FUNCTION_PARAMETERS), INTERNAL_FUNCTION_PARAMETERS)
+{
+	zend_string *old_name;
+	zend_string *new_name;
+	old_name = Z_STR_P(name);
+	new_name = zend_string_init(repname, strlen(repname), 1);
+	efree(repname);
+	Z_STR_P(name) = new_name;
+	orig_func(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+	Z_STR_P(name) = old_name;
+	zend_string_release(new_name);
+	return SUCCESS;
 }
 
 /*
@@ -1037,21 +1086,13 @@ static zval **shadow_get_arg(int arg TSRMLS_DC)
  */
 static int shadow_call_replace_name(int param, char *repname, void (*orig_func)(INTERNAL_FUNCTION_PARAMETERS), INTERNAL_FUNCTION_PARAMETERS)
 {
-	zval *old_name, *new_name;
-	zval **name;
+	zval *name;
 	name = shadow_get_arg(param TSRMLS_CC);
-	if(!name || !*name) {
+	if (!name) {
 		orig_func(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return FAILURE;
 	}
-	old_name = *name;
-	ALLOC_INIT_ZVAL(new_name);
-	ZVAL_STRING(new_name, repname, 0);
-	*name = new_name;
-	orig_func(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-	*name = old_name;
-	zval_ptr_dtor(&new_name);
-	return SUCCESS;
+	return shadow_call_replace_name_ex(name, repname, orig_func, INTERNAL_FUNCTION_PARAM_PASSTHRU);
 }
 
 /*
@@ -1069,8 +1110,8 @@ static int shadow_stream_check(char *filename TSRMLS_DC)
 static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS)
 {
 	char *filename;
-	int filename_len;
-	long filetime = 0, fileatime = 0;
+	size_t filename_len;
+	zend_long filetime = 0, fileatime = 0;
 	char *instname;
 
 	if(!SHADOW_ENABLED()) {
@@ -1085,6 +1126,7 @@ static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS)
 		orig_touch(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
+    if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_TOUCH) fprintf(stderr, "Touch*** \n");
 	instname = template_to_instance(filename, 0 TSRMLS_CC);
 
 	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_TOUCH) fprintf(stderr, "Touching %s (%s)\n", filename, instname);
@@ -1093,6 +1135,7 @@ static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS)
 		shadow_call_replace_name(0, instname, orig_touch, INTERNAL_FUNCTION_PARAM_PASSTHRU);
 		return;
 	}
+    if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_TOUCH) fprintf(stderr, "Touch: Using original touch function\n");
 	orig_touch(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 }
 
@@ -1101,8 +1144,8 @@ static void shadow_touch(INTERNAL_FUNCTION_PARAMETERS)
 static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS)
 {
 	char *filename;
-	int filename_len;
-	long mode;
+	size_t filename_len;
+	zend_long mode;
 	char *instname;
 
 	if(!SHADOW_ENABLED()) {
@@ -1136,7 +1179,7 @@ static void shadow_chmod(INTERNAL_FUNCTION_PARAMETERS)
 static void shadow_chdir(INTERNAL_FUNCTION_PARAMETERS)
 {
 	char *str;
-	int ret, str_len;
+	size_t str_len;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &str, &str_len) == FAILURE) {
 		RETURN_FALSE;
@@ -1153,16 +1196,16 @@ static void shadow_chdir(INTERNAL_FUNCTION_PARAMETERS)
 static void shadow_fread(INTERNAL_FUNCTION_PARAMETERS)
 {
 	zval *arg1;
-	long len;
+	zend_long len;
 	php_stream *stream;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &arg1, &len) == FAILURE) {
 		RETURN_FALSE;
 	}
 
-	php_stream_from_zval(stream, &arg1);
+	php_stream_from_zval(stream, arg1);
 	if(stream->wrapper == &shadow_wrapper) {
-		char		*contents	= NULL;
+		zend_string *contents = NULL;
 		int newlen;
 
 		if (len <= 0) {
@@ -1170,15 +1213,10 @@ static void shadow_fread(INTERNAL_FUNCTION_PARAMETERS)
 			RETURN_FALSE;
 		}
 
-		len = php_stream_copy_to_mem(stream, &contents, len, 0);
+		contents = php_stream_copy_to_mem(stream, len, 0);
 		if (contents) {
-#if ZEND_MODULE_API_NO < 20100525
-			if (len && PG(magic_quotes_runtime)) {
-				contents = php_addslashes(contents, len, &newlen, 1 TSRMLS_CC); /* 1 = free source string */
-				len = newlen;
-			}
-#endif
-			RETVAL_STRINGL(contents, len, 0);
+			RETVAL_STRINGL(ZSTR_VAL(contents), len);
+			efree(contents);
 		} else {
 			RETVAL_EMPTY_STRING();
 		}
@@ -1193,7 +1231,7 @@ static void shadow_fread(INTERNAL_FUNCTION_PARAMETERS)
 static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS)
 {
 	char *filename;
-	int filename_len;
+	size_t filename_len;
 	char *instname, *copy_name = NULL;
 
 	if(!SHADOW_ENABLED()) {
@@ -1228,7 +1266,8 @@ static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS)
 		return;
 	}
 	if(copy_name) {
-		ZVAL_STRING(return_value, copy_name, 0);
+		ZVAL_STRING(return_value, copy_name);
+		efree(copy_name);
 	}
 }
 /* }}} */
@@ -1238,7 +1277,7 @@ static void shadow_realpath(INTERNAL_FUNCTION_PARAMETERS)
 static void shadow_is_writable(INTERNAL_FUNCTION_PARAMETERS)
 {
 	char *filename = NULL;
-	int filename_len;
+	size_t filename_len;
 	char *instname;
 	zval **name;
 	zval *old_name, *new_name;
@@ -1275,13 +1314,12 @@ static void shadow_is_writable(INTERNAL_FUNCTION_PARAMETERS)
 static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 {
 	char *filename = NULL;
-	int filename_len;
+	size_t filename_len;
 	zval **name;
-	long flags;
+	zend_long flags;
 	char *instname=NULL, *templname=NULL, *mask=NULL, *path=NULL;
-	zval *instdata, *templdata;
-	zval **src_entry;
-	HashPosition pos;
+	zval instdata, templdata;
+	zval *src_entry;
 	HashTable *mergedata;
 	void *dummy = (void *)1;
 	int instlen, templen;
@@ -1372,15 +1410,13 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 		/* call with template */
 		if(shadow_call_replace_name(0, templname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU) == SUCCESS && Z_TYPE_P(return_value) == IS_ARRAY) {
 			/* cut off instname and put path part there */
-			zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(return_value), &pos);
-			while (zend_hash_get_current_data_ex(Z_ARRVAL_P(return_value), (void **)&src_entry, &pos) == SUCCESS) {
+			ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(return_value), src_entry) {
 				char *mergepath;
-				if(Z_TYPE_PP(src_entry) != IS_STRING) continue; /* weird, glob shouldn't do that to us */
-				spprintf(&mergepath, MAXPATHLEN, "%s/%s", path, Z_STRVAL_PP(src_entry)+templen+1);
-				zend_hash_add(mergedata, mergepath, strlen(mergepath), &dummy, sizeof(void *), NULL);
+				if (Z_TYPE_P(src_entry) != IS_STRING) continue; /* weird, glob shouldn't do that to us */
+				spprintf(&mergepath, MAXPATHLEN, "%s/%s", path, Z_STRVAL_P(src_entry)+templen+1);
+				zend_hash_str_add_new_ptr(mergedata, mergepath, strlen(mergepath), dummy);
 				efree(mergepath);
-				zend_hash_move_forward_ex(Z_ARRVAL_P(return_value), &pos);
-			}
+			} ZEND_HASH_FOREACH_END();
 		} else {
 			/* ignore problems here - other one may pick it up */
 			array_init(return_value);
@@ -1391,31 +1427,26 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	}
 
 	/* replace the return value */
-	templdata = return_value;
-	ALLOC_INIT_ZVAL(instdata);
-	return_value = instdata;
+	templdata = *return_value;
+	return_value = &instdata;
 	/* call with instance */
 	if(shadow_call_replace_name(0, instname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU) == SUCCESS && Z_TYPE_P(return_value) == IS_ARRAY) {
 		/* merge data */
-		zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(return_value), &pos);
-		while (zend_hash_get_current_data_ex(Z_ARRVAL_P(return_value), (void **)&src_entry, &pos) == SUCCESS) {
+		ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(return_value), src_entry) {
 			char *mergepath;
-			if(Z_TYPE_PP(src_entry) != IS_STRING) continue; /* weird, glob shouldn't do that to us */
-			spprintf(&mergepath, MAXPATHLEN, "%s/%s", path, Z_STRVAL_PP(src_entry)+instlen+1);
-			zend_hash_add(mergedata, mergepath, strlen(mergepath), &dummy, sizeof(void *), NULL);
+			if (Z_TYPE_P(src_entry) != IS_STRING) continue; /* weird, glob shouldn't do that to us */
+			spprintf(&mergepath, MAXPATHLEN, "%s/%s", path, Z_STRVAL_P(src_entry)+instlen+1);
+			zend_hash_str_add_ptr(mergedata, mergepath, strlen(mergepath), dummy);
 			efree(mergepath);
-			zend_hash_move_forward_ex(Z_ARRVAL_P(return_value), &pos);
-		}
+		} ZEND_HASH_FOREACH_END();
 	}
-	return_value = templdata;
-	zval_ptr_dtor(&instdata);
+	return_value = &templdata;
 	/* convert mergedata to return */
 	zend_hash_clean(Z_ARRVAL_P(return_value));
-	zend_hash_internal_pointer_reset_ex(mergedata, &pos);
-	while(zend_hash_get_current_key_ex(mergedata, &filename, &filename_len, &num, 0, &pos) == HASH_KEY_IS_STRING) {
-		add_next_index_stringl(return_value, filename, filename_len, 1);
-		zend_hash_move_forward_ex(mergedata, &pos);
-	}
+	zend_string *filename_zs;
+	ZEND_HASH_FOREACH_STR_KEY(mergedata, filename_zs) {
+		add_next_index_str(return_value, zend_string_copy(filename_zs));
+	} ZEND_HASH_FOREACH_END();
 	/* cleanup */
 	zend_hash_destroy(mergedata);
 	efree(mergedata);
@@ -1425,25 +1456,43 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 
 static void shadow_generic_override(INTERNAL_FUNCTION_PARAMETERS)
 {
-	shadow_function *func = (shadow_function *)EG(current_execute_data)->function_state.function;
+	zend_class_entry *ce = EG(current_execute_data)->func->common.scope;
+	zend_string *fname_full;
+	if (ce) {
+		char *fname_full_c;
+		size_t len = spprintf(&fname_full_c, 0, "%s::%s", ZSTR_VAL(ce->name), ZSTR_VAL(EG(current_execute_data)->func->common.function_name));
+		zend_str_tolower(fname_full_c, len);
+		fname_full = zend_string_init(fname_full_c, len, 0);
+		efree(fname_full_c);
+	} else {
+		fname_full = EG(current_execute_data)->func->common.function_name;
+	}
+	shadow_function *func;
+	if ((func = zend_hash_find_ptr(&SHADOW_G(replaced_function_table), fname_full)) == NULL) {
+		zend_string_release(fname_full);
+		return;
+	}
 	zval *old_name, *new_name;
-	zval **name;
+	zval *name;
 	int opts = OPT_CHECK_EXISTS|OPT_RETURN_INSTANCE;
 	char *instname;
 
 	if(!SHADOW_ENABLED()) {
 		func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		zend_string_release(fname_full);
 		return;
 	}
 
 	name = shadow_get_arg(func->argno TSRMLS_CC);
-	if(!name || !*name || Z_TYPE_PP(name) != IS_STRING) {
+	if (!name || Z_TYPE_P(name) != IS_STRING) {
 		func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		zend_string_release(fname_full);
 		return;
 	}
 	/* not our path - don't mess with it */
-	if(!shadow_stream_check(Z_STRVAL_PP(name))) {
+	if (!shadow_stream_check(Z_STRVAL_P(name))) {
 		func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		zend_string_release(fname_full);
 		return;
 	}
 	/* try to translate */
@@ -1451,20 +1500,18 @@ static void shadow_generic_override(INTERNAL_FUNCTION_PARAMETERS)
 		/* for write */
 		opts = OPT_RETURN_INSTANCE;
 	}
-	instname = template_to_instance(Z_STRVAL_PP(name), opts TSRMLS_CC);
-	if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OVERRIDE) fprintf(stderr, "Overriding %s: %s (%s)\n", func->original.internal_function.function_name, Z_STRVAL_PP(name), instname);
+	instname = template_to_instance(Z_STRVAL_P(name), opts TSRMLS_CC);
+	if (SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OVERRIDE) {
+		fprintf(stderr, "Overriding %s: %s (%s)\n", ZSTR_VAL(fname_full), Z_STRVAL_P(name), instname);
+	}
 	/* we didn't find better name, use original */
 	if(!instname) {
 		func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		zend_string_release(fname_full);
 		return;
 	}
-	old_name = *name;
-	ALLOC_INIT_ZVAL(new_name);
-	ZVAL_STRING(new_name, instname, 0);
-	*name = new_name;
-	func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-	*name = old_name;
-	zval_ptr_dtor(&new_name);
+	shadow_call_replace_name_ex(name, instname, func->orig_handler, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+	zend_string_release(fname_full);
 }
 
 /*
