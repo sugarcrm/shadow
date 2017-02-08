@@ -1,6 +1,8 @@
-Git: <https://github.com/sugarcrm/shadow>
+Build Status
+------------
+[![Build Status](https://travis-ci.org/sugarcrm/shadow.png)](https://travis-ci.org/sugarcrm/shadow)
 
-WIKI: <http://internalwiki.sjc.sugarcrm.pvt/index.php/Shadow_configuration>
+Git: <https://github.com/sugarcrm/shadow>
 
 PHP module
 ==========
