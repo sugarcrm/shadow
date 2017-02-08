@@ -2,16 +2,7 @@ language: php
 sudo: yes
 dist: trusty
 
-matrix:
-  allow_failures:
-    - env: PHPVER="5.4.29"
-    - env: PHPVER="5.5.38"
-    - env: PHPVER="5.6.30"
-
 env:
-  - PHPVER="5.4.29"
-  - PHPVER="5.5.38"
-  - PHPVER="5.6.30"
   - PHPVER="7.0.15"
   - PHPVER="7.1.1"
 
