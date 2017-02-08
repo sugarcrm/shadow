@@ -7,7 +7,7 @@ Git: <https://github.com/sugarcrm/shadow>
 PHP module
 ==========
 
-Shadow is implemented as PHP extension. Compile it using:
+Shadow is implemented as a PHP extension. Compile it using:
 
 ```bash
 phpize
