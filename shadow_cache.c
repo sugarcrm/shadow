@@ -65,18 +65,18 @@ int shadow_cache_get(const char *name, char **entry TSRMLS_DC)
 	namelen = shadow_cache_segmented_name(&segname, name TSRMLS_CC);
 	zend_string *segname_zs = zend_string_init(segname, namelen, 0);
 	if ((centry = zend_hash_find(&SHADOW_G(cache), segname_zs)) != NULL) {
+		zend_string_release(segname_zs);
+		efree(segname);
         if(Z_STRLEN_P(centry) == 0){
             *entry = NULL;
             return SUCCESS;
         }
 		*entry = estrdup(Z_STR_P(centry)->val);
-		efree(segname);
-        zend_string_release(segname_zs);
 		return SUCCESS;
 	} else {
 		*entry = NULL;
+		zend_string_release(segname_zs);
 		efree(segname);
-        zend_string_release(segname_zs);
 		return FAILURE;
 	}
 }
