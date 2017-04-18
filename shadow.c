@@ -113,8 +113,8 @@ const zend_function_entry shadow_functions[] = {
 static PHP_GINIT_FUNCTION(shadow)
 {
 	memset(shadow_globals, 0, sizeof(zend_shadow_globals));
-	zend_hash_init(&shadow_globals->cache, 10, NULL, NULL, 1); // persistent!
-	zend_hash_init(&shadow_globals->replaced_function_table, 10, NULL, NULL, 1);
+	zend_hash_init(&shadow_globals->cache, 10, NULL, ZVAL_PTR_DTOR, 1); // persistent!
+	zend_hash_init(&shadow_globals->replaced_function_table, 10, NULL, ZVAL_PTR_DTOR, 1);
 	// initial size 10 here is a common sense - look at the number of overriden functions
 }
 /* }}} */
@@ -123,6 +123,8 @@ static PHP_GINIT_FUNCTION(shadow)
  */
 static PHP_GSHUTDOWN_FUNCTION(shadow)
 {
+	shadow_cache_clean(TSRMLS_C);
+	zend_hash_clean(&shadow_globals->replaced_function_table);
 	zend_hash_destroy(&shadow_globals->replaced_function_table);
 	zend_hash_destroy(&shadow_globals->cache);
 }
@@ -544,6 +546,9 @@ static int is_instance_only(const char *filename TSRMLS_DC)
 		}
 		return result;
 	}
+	if (realpath) {
+		efree(realpath);
+	}
 	return 0;
 }
 
@@ -754,6 +759,7 @@ zend_string *shadow_resolve_path(const char *filename, int filename_len)
     // in any case we have to call original resolver because that can be reimplemented by opcache for example
     if (shadow_result) {
         result = original_zend_resolve_path(shadow_result, strlen(shadow_result));
+        efree(shadow_result);
     } else {
         result = original_zend_resolve_path(filename, filename_len);
     }
@@ -1440,6 +1446,7 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 			efree(mergepath);
 		} ZEND_HASH_FOREACH_END();
 	}
+	zval_dtor(return_value);
 	return_value = &templdata;
 	/* convert mergedata to return */
 	zend_hash_clean(Z_ARRVAL_P(return_value));
@@ -1448,6 +1455,7 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 		add_next_index_str(return_value, zend_string_copy(filename_zs));
 	} ZEND_HASH_FOREACH_END();
 	/* cleanup */
+	zend_hash_clean(mergedata);
 	zend_hash_destroy(mergedata);
 	efree(mergedata);
 	efree(path);
