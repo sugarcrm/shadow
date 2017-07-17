@@ -764,7 +764,7 @@ zend_string *shadow_resolve_path(const char *filename, int filename_len)
         result = original_zend_resolve_path(filename, filename_len);
     }
     if (SHADOW_G(debug) & SHADOW_DEBUG_RESOLVE) {
-		fprintf(stderr, "Resolve: %s -> %s\n", filename, ZSTR_VAL(result));
+		fprintf(stderr, "Resolve: %s -> %s\n", filename, result ? ZSTR_VAL(result) : NULL);
     }
     return result;
 }
