@@ -591,16 +591,18 @@ static char *get_full_path(const char *filename TSRMLS_DC)
 static inline char *instance_to_template(const char *instname, int len TSRMLS_DC)
 {
 	char *newname = NULL;
-	if (is_subdir_of(ZSTR_VAL(SHADOW_G(template)), ZSTR_LEN(SHADOW_G(template)), instname, len)) {
-		newname = estrndup(instname, len);
-	} else if (is_subdir_of(ZSTR_VAL(SHADOW_G(instance)), ZSTR_LEN(SHADOW_G(instance)), instname, len)) {
-		spprintf(
-			&newname,
-			MAXPATHLEN,
-			"%s/%s",
-			ZSTR_VAL(SHADOW_G(template)),
-			instname + ZSTR_LEN(SHADOW_G(instance)) + 1
-		);
+	if (SHADOW_ENABLED()) {
+		if (is_subdir_of(ZSTR_VAL(SHADOW_G(template)), ZSTR_LEN(SHADOW_G(template)), instname, len)) {
+			newname = estrndup(instname, len);
+		} else if (is_subdir_of(ZSTR_VAL(SHADOW_G(instance)), ZSTR_LEN(SHADOW_G(instance)), instname, len)) {
+			spprintf(
+				&newname,
+				MAXPATHLEN,
+				"%s/%s",
+				ZSTR_VAL(SHADOW_G(template)),
+				instname + ZSTR_LEN(SHADOW_G(instance)) + 1
+			);
+		}
 	}
 	return newname;
 }
