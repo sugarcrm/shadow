@@ -3,8 +3,7 @@ sudo: yes
 dist: trusty
 
 env:
-  - PHPVER="7.0.15"
-  - PHPVER="7.1.1"
+  - PHPVER="7.1.7"
 
 # This replaces the travis supplied phpbuild which defaults to ZTS enabled
 # builds.  Since we are replacing using the same config, we don't have to add
