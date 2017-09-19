@@ -21,7 +21,7 @@ sort($filenames);
 var_dump($filenames);
 ?>
 --EXPECT--
-array(14) {
+array(15) {
   [0]=>
   string(5) "cache"
   [1]=>
@@ -33,21 +33,23 @@ array(14) {
   [4]=>
   string(7) "instdir"
   [5]=>
-  string(10) "nowritedir"
+  string(12) "manifest.php"
   [6]=>
-  string(23) "opcache-override-me.php"
+  string(10) "nowritedir"
   [7]=>
-  string(17) "template_only.php"
+  string(23) "opcache-override-me.php"
   [8]=>
-  string(8) "templdir"
+  string(17) "template_only.php"
   [9]=>
-  string(9) "templdir2"
+  string(8) "templdir"
   [10]=>
-  string(8) "test.php"
+  string(9) "templdir2"
   [11]=>
-  string(12) "tinclude.php"
+  string(8) "test.php"
   [12]=>
-  string(3) "txt"
+  string(12) "tinclude.php"
   [13]=>
+  string(3) "txt"
+  [14]=>
   string(14) "unwritable.txt"
 }

@@ -1214,7 +1214,6 @@ static void shadow_fread(INTERNAL_FUNCTION_PARAMETERS)
 	php_stream_from_zval(stream, arg1);
 	if(stream->wrapper == &shadow_wrapper) {
 		zend_string *contents = NULL;
-		int newlen;
 
 		if (len <= 0) {
 			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Length parameter must be greater than 0");
@@ -1223,7 +1222,8 @@ static void shadow_fread(INTERNAL_FUNCTION_PARAMETERS)
 
 		contents = php_stream_copy_to_mem(stream, len, 0);
 		if (contents) {
-			RETVAL_STRINGL(ZSTR_VAL(contents), len);
+
+			RETVAL_STRINGL(ZSTR_VAL(contents), contents->len);
 			efree(contents);
 		} else {
 			RETVAL_EMPTY_STRING();
