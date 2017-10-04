@@ -1352,7 +1352,7 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 		mask = filename+filename_len;
 	}
 	while(--mask > filename && !IS_SLASH(*mask)); /* look up for slash */
-	path = estrndup(filename, mask-filename);
+	path = estrndup(filename, (mask - filename) > 0 ? (mask - filename) : 0);
 	/* path will be path part up to the directory containing first glob char */
 
 	if(is_instance_only(path TSRMLS_CC)) {
