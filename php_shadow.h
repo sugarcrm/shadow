@@ -68,7 +68,7 @@ ZEND_END_MODULE_GLOBALS(shadow)
 #define SHADOW_G(v) (shadow_globals.v)
 #endif
 
-#define SHADOW_VERSION "0.7.0"
+#define SHADOW_VERSION "0.8.0"
 
 ZEND_EXTERN_MODULE_GLOBALS(shadow)
 
