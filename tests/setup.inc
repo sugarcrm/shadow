@@ -8,4 +8,4 @@ set_include_path(
 );
 
 chdir($topdir);
-shadow($template, $instance, array("cache", "custom")) || die("failed to setup shadow");
+shadow($template, $instance, array("cache", "custom", "custom/some/long/directory/name")) || die("failed to setup shadow");
