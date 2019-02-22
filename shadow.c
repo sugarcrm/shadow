@@ -488,14 +488,15 @@ PHP_FUNCTION(shadow_clear_cache)
 */
 static int instance_only_subdir(const char *dir TSRMLS_DC)
 {
-	int i;
 	if(SHADOW_G(instance_only) == NULL) {
 		return 0;
 	}
+	int i;
+	int dir_len = strlen(dir);
 	for(i=0;i<SHADOW_G(instance_only_count);i++) {
 		/* TODO: optimize strlen here */
 		int len = strlen(SHADOW_G(instance_only)[i]);
-		if(memcmp(dir, SHADOW_G(instance_only)[i], len) == 0 && (!dir[len] || IS_SLASH(dir[len]))) {
+		if((dir_len >= len) && (memcmp(dir, SHADOW_G(instance_only)[i], len) == 0) && (!dir[len] || IS_SLASH(dir[len]))) {
 			return 1;
 		}
 	}
