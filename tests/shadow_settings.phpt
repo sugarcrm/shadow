@@ -28,11 +28,13 @@ array(3) {
   ["instance"]=>
   string(%d) "%s"
   ["instance_only"]=>
-  array(2) {
+  array(3) {
     [0]=>
     string(5) "cache"
     [1]=>
     string(6) "custom"
+    [2]=>
+    string(31) "custom/some/long/directory/name"
   }
 }
 0755
