@@ -216,7 +216,6 @@ static void shadow_override_function(char *fname, size_t fname_len, int argno, i
 
     zend_string_release(fname_zs);
     zend_string_release(fname_full);
-    pefree(override, 1);
 }
 
 /* {{{ PHP_MINIT_FUNCTION
