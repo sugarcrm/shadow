@@ -727,7 +727,6 @@ static void clean_cache_dir(const char *clean_dirname TSRMLS_DC)
 	len = strlen(dirname);
 	shadow_cache_remove(dirname);
 	while (len > ZSTR_LEN(SHADOW_G(template))) {
-		char c;
 		while (len > ZSTR_LEN(SHADOW_G(template)) && !IS_SLASH(dirname[len])) len--;
 		/* remove both one with slash at the end and without it, just in case */
 		dirname[len+1] = '\0';
@@ -1288,8 +1287,6 @@ static void shadow_is_writable(INTERNAL_FUNCTION_PARAMETERS)
 	char *filename = NULL;
 	size_t filename_len;
 	char *instname;
-	zval **name;
-	zval *old_name, *new_name;
 
 	if(!SHADOW_ENABLED()) {
 		orig_is_writable(INTERNAL_FUNCTION_PARAM_PASSTHRU);
@@ -1324,7 +1321,6 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 {
 	char *filename = NULL;
 	size_t filename_len;
-	zval **name;
 	zend_long flags;
 	char *instname=NULL, *templname=NULL, *mask=NULL, *path=NULL;
 	zval instdata, templdata;
@@ -1332,7 +1328,6 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	HashTable *mergedata;
 	void *dummy = (void *)1;
 	int instlen, templen;
-	long num;
 	int skip_template=0;
 
 	if(!SHADOW_ENABLED()) {
@@ -1483,7 +1478,6 @@ static void shadow_generic_override(INTERNAL_FUNCTION_PARAMETERS)
 		zend_string_release(fname_full);
 		return;
 	}
-	zval *old_name, *new_name;
 	zval *name;
 	int opts = OPT_CHECK_EXISTS|OPT_RETURN_INSTANCE;
 	char *instname;
