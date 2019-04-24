@@ -28,6 +28,8 @@
 
 ZEND_DECLARE_MODULE_GLOBALS(shadow)
 
+static char *shadow_override_copy = NULL;
+
 typedef struct _shadow_function {
 	void (*orig_handler)(INTERNAL_FUNCTION_PARAMETERS);
 	int argno;
@@ -218,6 +220,50 @@ static void shadow_override_function(char *fname, size_t fname_len, int argno, i
     zend_string_release(fname_full);
 }
 
+static void shadow_undo_override(char *fname, size_t fname_len, int argno, int argtype)
+{
+	zend_function *orig;
+	shadow_function *override;
+	HashTable *table = CG(function_table);
+	char *col;
+	zend_string *fname_full = zend_string_init(fname, fname_len, 1);
+	zend_class_entry *cls;
+
+	if((col = strchr(fname, ':')) != NULL) {
+		*col = '\0';
+		zend_string *fname_zs = zend_string_init(fname, col - fname, 0);
+		if ((cls = zend_hash_find_ptr(CG(class_table), fname_zs)) == NULL) {
+			return;
+		}
+
+        zend_string_release(fname_zs);
+		table = &cls->function_table;
+		fname = col+2;
+		fname_len = strlen(fname);
+	}
+
+    zend_string *fname_zs = zend_string_init(fname, strlen(fname), 0);
+
+	if ((orig = zend_hash_find_ptr(table, fname_zs)) == NULL) {
+		zend_string_release(fname_zs);
+		return;
+	}
+
+	if ((override = zend_hash_find_ptr(&SHADOW_G(replaced_function_table), fname_full)) == NULL) {
+		zend_string_release(fname_zs);
+		return;
+	}
+
+	orig->internal_function.handler = override->orig_handler;
+
+	zend_hash_del(&SHADOW_G(replaced_function_table), fname_full);
+	pefree(override, 1);
+
+	zend_string_release(fname_full);
+	zend_string_release(fname_zs);
+}
+
+
 /* {{{ PHP_MINIT_FUNCTION
  */
 PHP_MINIT_FUNCTION(shadow)
@@ -274,6 +320,8 @@ PHP_MINIT_FUNCTION(shadow)
 		char c;
 		int argno;
 		int argtype;
+		/* Save this for shutdown */
+		shadow_override_copy = estrdup(SHADOW_G(override));
 		while(*over) {
 			char *next = strchr(over, ',');
 			if(!next) {
@@ -316,6 +364,48 @@ PHP_MINIT_FUNCTION(shadow)
  */
 PHP_MSHUTDOWN_FUNCTION(shadow)
 {
+	if (shadow_override_copy != NULL) {
+		/* Cleanup after our user-specified overrides. */
+		char *over = shadow_override_copy;
+		size_t over_len;
+		char c;
+		int argno;
+		int argtype;
+
+		while(*over) {
+			char *next = strchr(over, ',');
+			if(!next) {
+				next = over+strlen(over);
+			}
+			for(over_len=0;over_len<next-over;over_len++) {
+				/* find @ or , */
+				if(over[over_len] == '@' || over[over_len] == ',' || over[over_len] =='\0') break;
+			}
+			argno = 0;
+			argtype = 0;
+			if(over[over_len] == '@') {
+				if(!isdigit(over[over_len+1])) {
+					if(over[over_len+1] == 'w') {
+						argtype = 1;
+					}
+					argno = atoi(over+over_len+2);
+				} else {
+					argno = atoi(over+over_len+1);
+				}
+			}
+			c = over[over_len];
+			over[over_len] = '\0';
+			/* Undo the override here... */
+			shadow_undo_override(over, over_len, argno, argtype);
+			over[over_len] = c;
+			if(*next) {
+				over = next+1;
+			} else {
+				break;
+			}
+		}
+		efree(shadow_override_copy);
+	}
 	UNREGISTER_INI_ENTRIES();
 	return SUCCESS;
 }
