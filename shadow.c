@@ -61,8 +61,8 @@ static php_stream_ops shadow_dirstream_ops = {
 	NULL  /* set_option */
 };
 
-static php_stream_wrapper_ops *plain_ops;
-zend_string *(*original_zend_resolve_path)(const char *filename, int filename_len);
+static const php_stream_wrapper_ops *plain_ops;
+zend_string *(*original_zend_resolve_path)(const char *filename, size_t filename_len);
 static void (*orig_touch)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_chmod)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_chdir)(INTERNAL_FUNCTION_PARAMETERS);
@@ -71,7 +71,7 @@ static void (*orig_realpath)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_is_writable)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_glob)(INTERNAL_FUNCTION_PARAMETERS);
 
-zend_string *shadow_resolve_path(const char *filename, int filename_len);
+zend_string *shadow_resolve_path(const char *filename, size_t filename_len);
 static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, const char *filename, const char *mode,
 	int options, zend_string **opened_path, php_stream_context *context STREAMS_DC);
 static int shadow_stat(php_stream_wrapper *wrapper, const char *url, int flags, php_stream_statbuf *ssb,
@@ -113,7 +113,7 @@ const zend_function_entry shadow_functions[] = {
 static PHP_GINIT_FUNCTION(shadow)
 {
 	memset(shadow_globals, 0, sizeof(zend_shadow_globals));
-	zend_hash_init(&shadow_globals->cache, 10, NULL, ZVAL_PTR_DTOR, 1); // persistent!
+	zend_hash_init(&shadow_globals->cache, 10, NULL, ZVAL_INTERNAL_PTR_DTOR, 1); // persistent!
 	zend_hash_init(&shadow_globals->replaced_function_table, 10, NULL, ZVAL_PTR_DTOR, 1);
 	// initial size 10 here is a common sense - look at the number of overriden functions
 }
@@ -167,6 +167,11 @@ PHP_INI_END()
 
 #define SHADOW_CONSTANT(C) 		REGISTER_LONG_CONSTANT(#C, C, CONST_CS | CONST_PERSISTENT)
 
+/* {{{ SHADOW_OVERRIDE
+ * Use this macros to override php function with shadow analogue. E.g.:
+ * SHADOW_OVERRIDE(fread);
+ * It requires shadow_fread() function to be defined and have exactly the same signature as fread() function.
+ */
 #define SHADOW_OVERRIDE(func) \
 	orig_##func = NULL; \
      	zend_string * key_##func = zend_string_init(#func, strlen(#func), 0);\
@@ -174,7 +179,8 @@ PHP_INI_END()
         orig_##func = orig->internal_function.handler; \
         orig->internal_function.handler = shadow_##func; \
 	} \
-     	zend_string_release(key_##func);
+	zend_string_release_ex(key_##func, 0);
+/* }}} */
 
 #define SHADOW_ENABLED() (SHADOW_G(enabled) != 0 && SHADOW_G(instance) != NULL && SHADOW_G(template) != NULL)
 
@@ -194,7 +200,7 @@ static void shadow_override_function(char *fname, size_t fname_len, int argno, i
 			return;
 		}
 
-        zend_string_release(fname_zs);
+        zend_string_release_ex(fname_zs, 0);
 		table = &cls->function_table;
 		fname = col+2;
 		fname_len = strlen(fname);
@@ -203,7 +209,7 @@ static void shadow_override_function(char *fname, size_t fname_len, int argno, i
     zend_string *fname_zs = zend_string_init(fname, strlen(fname), 0);
 
 	if ((orig = zend_hash_find_ptr(table, fname_zs)) == NULL) {
-		zend_string_release(fname_zs);
+		zend_string_release_ex(fname_zs, 0);
 		return;
 	}
 
@@ -214,8 +220,8 @@ static void shadow_override_function(char *fname, size_t fname_len, int argno, i
 
 	orig->internal_function.handler = shadow_generic_override;
 
-    zend_string_release(fname_zs);
-    zend_string_release(fname_full);
+    zend_string_release_ex(fname_zs, 0);
+    zend_string_release_ex(fname_full, 1);
 }
 
 static void shadow_undo_override(char *fname, size_t fname_len, int argno, int argtype)
@@ -234,7 +240,7 @@ static void shadow_undo_override(char *fname, size_t fname_len, int argno, int a
 			return;
 		}
 
-        zend_string_release(fname_zs);
+        zend_string_release_ex(fname_zs, 0);
 		table = &cls->function_table;
 		fname = col+2;
 		fname_len = strlen(fname);
@@ -243,12 +249,12 @@ static void shadow_undo_override(char *fname, size_t fname_len, int argno, int a
     zend_string *fname_zs = zend_string_init(fname, strlen(fname), 0);
 
 	if ((orig = zend_hash_find_ptr(table, fname_zs)) == NULL) {
-		zend_string_release(fname_zs);
+		zend_string_release_ex(fname_zs, 0);
 		return;
 	}
 
 	if ((override = zend_hash_find_ptr(&SHADOW_G(replaced_function_table), fname_full)) == NULL) {
-		zend_string_release(fname_zs);
+		zend_string_release_ex(fname_zs, 0);
 		return;
 	}
 
@@ -257,8 +263,8 @@ static void shadow_undo_override(char *fname, size_t fname_len, int argno, int a
 	zend_hash_del(&SHADOW_G(replaced_function_table), fname_full);
 	pefree(override, 1);
 
-	zend_string_release(fname_full);
-	zend_string_release(fname_zs);
+	zend_string_release_ex(fname_full, 1);
+	zend_string_release_ex(fname_zs, 0);
 }
 
 
@@ -415,8 +421,11 @@ PHP_MSHUTDOWN_FUNCTION(shadow)
 PHP_RINIT_FUNCTION(shadow)
 {
 	if(SHADOW_G(enabled)) {
-		php_unregister_url_stream_wrapper_volatile("file");
-		php_register_url_stream_wrapper_volatile("file", &shadow_wrapper);
+		zend_string *protocol;
+		protocol = zend_string_init("file", strlen("file"), 0);
+		php_unregister_url_stream_wrapper_volatile(protocol);
+		php_register_url_stream_wrapper_volatile(protocol, &shadow_wrapper);
+		zend_string_release_ex(protocol, 0);
 	}
 	SHADOW_G(template) = NULL;
 	SHADOW_G(instance) = NULL;
@@ -843,7 +852,7 @@ static void ensure_dir_exists(char *pathname, php_stream_wrapper *wrapper, php_s
 	pathname[dir_len] = '/'; /* restore full path */
 }
 
-zend_string *shadow_resolve_path(const char *filename, int filename_len)
+zend_string *shadow_resolve_path(const char *filename, size_t filename_len)
 {
     char *shadow_result = template_to_instance(filename, OPT_CHECK_EXISTS TSRMLS_CC);
     zend_string *result = NULL;
@@ -1174,7 +1183,7 @@ static int shadow_call_replace_name_ex(zval *name, char *repname, void (*orig_fu
 	Z_STR_P(name) = new_name;
 	orig_func(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 	Z_STR_P(name) = old_name;
-	zend_string_release(new_name);
+	zend_string_release_ex(new_name, 1);
 	return SUCCESS;
 }
 
@@ -1564,7 +1573,7 @@ static void shadow_generic_override(INTERNAL_FUNCTION_PARAMETERS)
 	}
 	shadow_function *func;
 	if ((func = zend_hash_find_ptr(&SHADOW_G(replaced_function_table), fname_full)) == NULL) {
-		zend_string_release(fname_full);
+		zend_string_release_ex(fname_full, 0);
 		return;
 	}
 	zval *name;
@@ -1573,20 +1582,20 @@ static void shadow_generic_override(INTERNAL_FUNCTION_PARAMETERS)
 
 	if(!SHADOW_ENABLED()) {
 		func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-		zend_string_release(fname_full);
+		zend_string_release_ex(fname_full, 0);
 		return;
 	}
 
 	name = shadow_get_arg(func->argno TSRMLS_CC);
 	if (!name || Z_TYPE_P(name) != IS_STRING) {
 		func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-		zend_string_release(fname_full);
+		zend_string_release_ex(fname_full, 0);
 		return;
 	}
 	/* not our path - don't mess with it */
 	if (!shadow_stream_check(Z_STRVAL_P(name))) {
 		func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-		zend_string_release(fname_full);
+		zend_string_release_ex(fname_full, 0);
 		return;
 	}
 	/* try to translate */
@@ -1601,11 +1610,11 @@ static void shadow_generic_override(INTERNAL_FUNCTION_PARAMETERS)
 	/* we didn't find better name, use original */
 	if(!instname) {
 		func->orig_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-		zend_string_release(fname_full);
+		zend_string_release_ex(fname_full, 0);
 		return;
 	}
 	shadow_call_replace_name_ex(name, instname, func->orig_handler, INTERNAL_FUNCTION_PARAM_PASSTHRU);
-	zend_string_release(fname_full);
+	zend_string_release_ex(fname_full, 0);
 }
 
 /*
