@@ -2,6 +2,9 @@
 Check overrides
 --EXTENSIONS--
 zip
+--DESCRIPTION--
+To test it locally if you have shared zip extension you'll need:
+export TEST_PHP_ARGS="-d extension=$(php-config --extension-dir)/zip.so"
 --INI--
 shadow.override=ziparchive::open@w0,ziparchive::addfile@0
 --SKIPIF--

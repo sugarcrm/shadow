@@ -3,16 +3,14 @@ Check overrides
 --EXTENSIONS--
 gd
 fileinfo
+--DESCRIPTION--
+To test it locally if you have shared gd extension you'll need:
+export TEST_PHP_ARGS="-d extension=$(php-config --extension-dir)/gd.so"
 --INI--
 shadow.override=imagepng@w1
 --SKIPIF--
-<?php if (!extension_loaded('shadow')) {
+<?php if (!extension_loaded('shadow') || !extension_loaded('gd')) {
     print 'skip';
-} ?>
-<?php if (!extension_loaded('gd')) {
-    if (!function_exists('dl') || (function_exists('dl') && !dl('gd.so')) || !function_exists('imagecreate')) {
-        print 'skip';
-    }
 } ?>
 --FILE--
 <?php

@@ -3,7 +3,7 @@ Check require_once with opcache
 --DESCRIPTION--
 This will optionally test with opcache enabled.
 To use it, install ZendOpcache if needed and then do this before running tests:
-export TEST_PHP_ARGS="-d zend_extension=/usr/lib64/php/modules/opcache.so"
+export TEST_PHP_ARGS="-d zend_extension=$(php-config --extension-dir)/opcache.so"
 --INI--
 opcache.enable_cli=1
 opcache.revalidate_path=1
