@@ -60,6 +60,7 @@ ZEND_BEGIN_MODULE_GLOBALS(shadow)
 	HashTable cache;
 	HashTable replaced_function_table;
 	uint segment_id;
+	char *shadow_override_copy;
 ZEND_END_MODULE_GLOBALS(shadow)
 
 #ifdef ZTS

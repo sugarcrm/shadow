@@ -28,8 +28,6 @@
 
 ZEND_DECLARE_MODULE_GLOBALS(shadow)
 
-static char *shadow_override_copy = NULL;
-
 typedef struct _shadow_function {
 	void (*orig_handler)(INTERNAL_FUNCTION_PARAMETERS);
 	int argno;
@@ -321,7 +319,7 @@ PHP_MINIT_FUNCTION(shadow)
 		int argno;
 		int argtype;
 		/* Save this for shutdown */
-		shadow_override_copy = estrdup(SHADOW_G(override));
+		SHADOW_G(shadow_override_copy) = estrdup(SHADOW_G(override));
 		while(*over) {
 			char *next = strchr(over, ',');
 			if(!next) {
@@ -364,9 +362,9 @@ PHP_MINIT_FUNCTION(shadow)
  */
 PHP_MSHUTDOWN_FUNCTION(shadow)
 {
-	if (shadow_override_copy != NULL) {
+	if (SHADOW_G(shadow_override_copy) != NULL) {
 		/* Cleanup after our user-specified overrides. */
-		char *over = shadow_override_copy;
+		char *over = SHADOW_G(shadow_override_copy);
 		size_t over_len;
 		char c;
 		int argno;
@@ -404,7 +402,7 @@ PHP_MSHUTDOWN_FUNCTION(shadow)
 				break;
 			}
 		}
-		efree(shadow_override_copy);
+		efree(SHADOW_G(shadow_override_copy));
 	}
 	UNREGISTER_INI_ENTRIES();
 	return SUCCESS;
@@ -424,6 +422,7 @@ PHP_RINIT_FUNCTION(shadow)
 	SHADOW_G(instance) = NULL;
 	SHADOW_G(curdir) = NULL;
 	SHADOW_G(segment_id) = 0;
+	SHADOW_G(shadow_override_copy) = NULL;
 	return SUCCESS;
 }
 /* }}} */
