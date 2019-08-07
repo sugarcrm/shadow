@@ -1,24 +1,11 @@
 language: php
 sudo: yes
+php:
+  - '7.3'
 dist: bionic
 
-env:
-  - PHPVER="7.3.8"
-
-# This replaces the travis supplied phpbuild which defaults to ZTS enabled
-# builds.  Since we are replacing using the same config, we don't have to add
-# the env stuff.
-install:
-  - rm -rf ~/.phpenv
-  - sudo apt-get clean
-  - sudo apt-get update
-  - sudo apt-get install libzip-dev
-  - curl -L http://git.io/phpenv-installer | bash
-  - travis_wait phpenv install "${PHPVER}"
-  - phpenv global "${PHPVER}"
-  - phpenv rehash
-
 before_script:
+  - phpenv rehash
   - php-config --extension-dir
   - phpize
   - ./configure
