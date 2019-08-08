@@ -1,5 +1,5 @@
 <?php
-$topdir = dirname(__FILE__);
+$topdir = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'fixtures';
 $template = join(DIRECTORY_SEPARATOR, [$topdir, "templatedir"]);
 $instance = join(DIRECTORY_SEPARATOR, [$topdir, "instance"]);
 

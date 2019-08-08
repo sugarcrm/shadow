@@ -6,7 +6,7 @@ Check creating directories when shadow is not enabled
 } ?>
 --FILE--
 <?php
-$instance = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'instance';
+$instance = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'fixtures' . DIRECTORY_SEPARATOR . 'instance';
 mkdir("$instance/cache/upgrades");
 
 echo "Created\n";
