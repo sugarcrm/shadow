@@ -1,66 +1,40 @@
 --TEST--
-Check writing to files in new dir with dir mask
+Check directory mask on instance directory
 --INI--
-shadow.mkdir_mask=0755
+shadow.mkdir_mask=0777
 --SKIPIF--
 <?php if (!extension_loaded('shadow')) {
     print 'skip';
 } ?>
-<?php if (exec('whoami') == 'root') {
-    print 'skip';
-} ?>
---XFAIL--
-nrh: 20150605: We belive this feature to be unimplemnted, see CRYS-959
 --FILE--
 <?php
 require_once 'setup.inc';
 
 chdir($template);
+umask(0);
 
-mkdir("txt/new/");
-mkdir("txt/new/dir/");
-file_put_contents("txt/new/dir/_twrite.txt", "writing as template\n");
+touch('non-existing/test.txt');
 
-mkdir("txt/new2/");
-mkdir("txt/new2/dir/");
+clearstatcache();
+
+$stat = stat($instance . '/non-existing/');
+echo substr(decoct($stat['mode']), -5) . PHP_EOL;
+
+unlink('non-existing/test.txt');
+rmdir($instance . '/non-existing/');
+
 ini_set('shadow.mkdir_mask', '0700');
-file_put_contents("txt/new2/dir/_twrite.txt", "writing as template\n");
-mkdir("txt/new2/dir7000/");
+
+touch('non-existing/test.txt');
 
 clearstatcache();
 
-$stat = stat("txt/new/dir/");
+$stat = stat($instance . '/non-existing/');
 echo substr(decoct($stat['mode']), -5) . PHP_EOL;
 
-$stat = stat("txt/new/");
-echo substr(decoct($stat['mode']), -5) . PHP_EOL;
-
-$stat = stat("txt/new2/dir/");
-echo substr(decoct($stat['mode']), -5) . PHP_EOL;
-
-$stat = stat("txt/new2/");
-echo substr(decoct($stat['mode']), -5) . PHP_EOL;
-
-$stat = stat("txt/new2/dir7000/");
-echo substr(decoct($stat['mode']), -5) . PHP_EOL;
-
-clearstatcache();
-
-unlink("txt/new/dir/_twrite.txt");
-rmdir("txt/new/dir");
-var_dump(rmdir("txt/new"));
-
-unlink("txt/new2/dir/_twrite.txt");
-rmdir("txt/new2/dir7000/");
-rmdir("txt/new2/dir");
-var_dump(rmdir("txt/new2"));
+unlink('non-existing/test.txt');
+rmdir($instance . '/non-existing/');
 ?>
 --EXPECT--
-40755
-40755
-40755
-40755
-40755
+40777
 40700
-bool(true)
-bool(true)
