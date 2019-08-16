@@ -2,6 +2,9 @@
 Check overrides
 --EXTENSIONS--
 zip
+--DESCRIPTION--
+To test it locally if you have shared zip extension you'll need:
+export TEST_PHP_ARGS="-d extension=$(php-config --extension-dir)/zip.so"
 --INI--
 shadow.override=ziparchive::open@w0,ziparchive::addfile@0
 --SKIPIF--
@@ -16,15 +19,14 @@ $zip->addEmptyDir("txt/");
 $zip->addFile("txt/ifile.txt", "txt/ifile.txt");
 $zip->close();
 shadow("","");
-chdir(dirname(__FILE__));
+chdir($topdir);
 var_dump(file_exists("instance/instdir/test.zip"));
 $zip->open("instance/instdir/test.zip");
 var_dump($zip->getNameIndex(0));
 var_dump($zip->getNameIndex(1));
-unlink("instance/instdir/test.zip");
+unlink('instance/instdir/test.zip');
 ?>
 --EXPECT--
 bool(true)
 string(4) "txt/"
 string(13) "txt/ifile.txt"
-

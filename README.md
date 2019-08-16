@@ -55,12 +55,12 @@ Configuration parameters
 
 php.ini parameters for shadow. Default is fine for most cases.
 
-| Name               | Default | Meaning                                              |
-|--------------------|---------|------------------------------------------------------|
-| shadow.enabled     | 1       | Shadowing enabled?                                   |
-| shadow.mkdir\_mask | 0755    | Mask used when creating new directories on instances |
-| shadow.debug       | 0       | Debug level (bitmask)                                |
-| shadow.cache\_size | 10000   | Shadow cache size (in bytes, per process)            |
+| Name               | Default | Meaning                                                         |
+|--------------------|---------|-----------------------------------------------------------------|
+| shadow.enabled     | 1       | Shadowing enabled?                                              |
+| shadow.mkdir\_mask | 0755    | Mask used when creating implicitly new directories on instances |
+| shadow.debug       | 0       | Debug level (bitmask)                                           |
+| shadow.cache\_size | 10000   | Shadow cache size (in bytes, per process)                       |
 
 Debug level
 -----------
