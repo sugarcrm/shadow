@@ -15,15 +15,15 @@
 #include "shadow_cache.h"
 
 /* if the cache is full, clean it */
-void shadow_cache_check_full(TSRMLS_D)
+void shadow_cache_check_full()
 {
 	if(zend_hash_num_elements(&SHADOW_G(cache)) >= SHADOW_G(cache_size)) {
-		shadow_cache_clean(TSRMLS_C);
+		shadow_cache_clean();
 	}
 }
 
 /* set cache segment ID from template/instance pair */
-void shadow_cache_set_id(zend_string *template, zend_string *instance TSRMLS_DC)
+void shadow_cache_set_id(zend_string *template, zend_string *instance)
 {
 	char *segname;
 	int namelen;
@@ -36,7 +36,7 @@ void shadow_cache_set_id(zend_string *template, zend_string *instance TSRMLS_DC)
 	zend_string *segname_zs = zend_string_init(segname, namelen, 1);
 	if ((segment_zv = zend_hash_find(&SHADOW_G(cache), segname_zs)) == NULL) {
 		uint segment;
-		shadow_cache_check_full(TSRMLS_C);
+		shadow_cache_check_full();
 		segment = zend_hash_num_elements(&SHADOW_G(cache))+2; /* 0 and 1 are reserved */
 		zval segment_new_zv;
 		ZVAL_LONG(&segment_new_zv, segment);
@@ -49,12 +49,12 @@ void shadow_cache_set_id(zend_string *template, zend_string *instance TSRMLS_DC)
 	efree(segname);
 }
 
-int shadow_cache_segmented_name(char **outname, const char *name TSRMLS_DC)
+int shadow_cache_segmented_name(char **outname, const char *name)
 {
 	return spprintf(outname, 0, "%d\x9%s", SHADOW_G(segment_id), name);
 }
 
-int shadow_cache_get(const char *name, char **entry TSRMLS_DC)
+int shadow_cache_get(const char *name, char **entry)
 {
 	char *segname;
 	int namelen;
@@ -62,7 +62,7 @@ int shadow_cache_get(const char *name, char **entry TSRMLS_DC)
 	if(SHADOW_G(cache_size) == 0) {
 		return FAILURE;
 	}
-	namelen = shadow_cache_segmented_name(&segname, name TSRMLS_CC);
+	namelen = shadow_cache_segmented_name(&segname, name);
 	zend_string *segname_zs = zend_string_init(segname, namelen, 0);
 	if ((centry = zend_hash_find(&SHADOW_G(cache), segname_zs)) != NULL) {
 		zend_string_release_ex(segname_zs, 0);
@@ -81,7 +81,7 @@ int shadow_cache_get(const char *name, char **entry TSRMLS_DC)
 	}
 }
 
-void shadow_cache_put(const char *name, const char *entry TSRMLS_DC)
+void shadow_cache_put(const char *name, const char *entry)
 {
 	char *segname;
 	int namelen;
@@ -93,7 +93,7 @@ void shadow_cache_put(const char *name, const char *entry TSRMLS_DC)
 	if(!entry) {
 		entry = "";
 	}
-	namelen = shadow_cache_segmented_name(&segname, name TSRMLS_CC);
+	namelen = shadow_cache_segmented_name(&segname, name);
 	zend_string *segname_zs = zend_string_init(segname, namelen, 1);
 	ZVAL_PSTRING(&entry_zv, entry);
 	zend_hash_update(&SHADOW_G(cache), segname_zs, &entry_zv);
@@ -101,19 +101,19 @@ void shadow_cache_put(const char *name, const char *entry TSRMLS_DC)
 	zend_string_release_ex(segname_zs, 1);
 }
 
-void shadow_cache_remove(const char *name TSRMLS_DC)
+void shadow_cache_remove(const char *name)
 {
 	char *segname;
 	int namelen;
 	if(SHADOW_G(cache_size) == 0) {
 		return;
 	}
-	namelen = shadow_cache_segmented_name(&segname, name TSRMLS_CC);
+	namelen = shadow_cache_segmented_name(&segname, name);
 	zend_hash_str_del(&SHADOW_G(cache), segname, namelen);
 	efree(segname);
 }
 
-void shadow_cache_clean(TSRMLS_C)
+void shadow_cache_clean()
 {
 	zend_hash_clean(&SHADOW_G(cache));
 }
