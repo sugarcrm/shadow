@@ -3,7 +3,7 @@ sudo: yes
 dist: bionic
 
 env:
-  - PHPVER="7.3.8"
+  - PHPVER="8.0.3"
 
 # This replaces the travis supplied phpbuild which defaults to ZTS enabled
 # builds.  Since we are replacing using the same config, we don't have to add
