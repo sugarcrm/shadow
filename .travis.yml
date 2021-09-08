@@ -3,7 +3,7 @@ sudo: yes
 dist: bionic
 
 env:
-  - PHPVER="7.3.8"
+  - PHPVER="8.0.0"
 
 # This replaces the travis supplied phpbuild which defaults to ZTS enabled
 # builds.  Since we are replacing using the same config, we don't have to add
@@ -12,7 +12,7 @@ install:
   - rm -rf ~/.phpenv
   - sudo apt-get clean
   - sudo apt-get update
-  - sudo apt-get install libzip-dev
+  - sudo apt-get install libzip-dev libonig-dev
   - curl -L http://git.io/phpenv-installer | bash
   - travis_wait phpenv install "${PHPVER}"
   - phpenv global "${PHPVER}"

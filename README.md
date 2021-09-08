@@ -1,6 +1,6 @@
 Build Status
 ------------
-[![Build Status](https://travis-ci.org/sugarcrm/shadow.svg?branch=master)](https://travis-ci.org/sugarcrm/shadow)
+[![Build Status](https://travis-ci.com/sugarcrm/shadow.svg?branch=master)](https://travis-ci.com/sugarcrm/shadow)
 
 Git: <https://github.com/sugarcrm/shadow>
 
