@@ -7,6 +7,7 @@ Check touching files with stream
 require_once('setup.inc');
 
 class MyStream {
+    public $context;
 	 public function stream_open($path, $mode)
     	{
 		$this->fp = fopen(substr($path, 11), $mode);	
