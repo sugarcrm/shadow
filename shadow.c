@@ -62,7 +62,7 @@ static php_stream_ops shadow_dirstream_ops = {
 };
 
 static const php_stream_wrapper_ops *plain_ops;
-zend_string *(*original_zend_resolve_path)(const char *filename, size_t filename_len);
+zend_string *(*original_zend_resolve_path)(zend_string *filename);
 static void (*orig_touch)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_chmod)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_chdir)(INTERNAL_FUNCTION_PARAMETERS);
@@ -71,7 +71,7 @@ static void (*orig_realpath)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_is_writable)(INTERNAL_FUNCTION_PARAMETERS);
 static void (*orig_glob)(INTERNAL_FUNCTION_PARAMETERS);
 
-zend_string *shadow_resolve_path(const char *filename, size_t filename_len);
+zend_string *shadow_resolve_path(zend_string *filename);
 static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, const char *filename, const char *mode,
 	int options, zend_string **opened_path, php_stream_context *context STREAMS_DC);
 static int shadow_stat(php_stream_wrapper *wrapper, const char *url, int flags, php_stream_statbuf *ssb,
@@ -510,11 +510,15 @@ PHP_FUNCTION(shadow)
 		RETURN_TRUE;
 	}
 
-	SHADOW_G(template) = zend_resolve_path(temp, temp_len);
+	zend_string *strtemp = zend_string_init(temp, temp_len, 0);
+	SHADOW_G(template) = zend_resolve_path(strtemp);
+	zend_string_release(strtemp);
 	if(!SHADOW_G(template)) {
 		RETURN_FALSE;
 	}
-	SHADOW_G(instance) = zend_resolve_path(inst, inst_len);
+	zend_string *strinst = zend_string_init(inst, inst_len, 0);
+	SHADOW_G(instance) = zend_resolve_path(strinst);
+	zend_string_release(strinst);
 	if(!SHADOW_G(instance)) {
 		efree(SHADOW_G(template));
 		SHADOW_G(template) = NULL;
@@ -855,16 +859,18 @@ static void ensure_dir_exists(char *pathname, php_stream_wrapper *wrapper, php_s
 	pathname[dir_len] = '/'; /* restore full path */
 }
 
-zend_string *shadow_resolve_path(const char *filename, size_t filename_len)
+zend_string *shadow_resolve_path(zend_string *filename)
 {
-    char *shadow_result = template_to_instance(filename, OPT_CHECK_EXISTS);
+    char *shadow_result = template_to_instance(ZSTR_VAL(filename), OPT_CHECK_EXISTS);
     zend_string *result = NULL;
     // in any case we have to call original resolver because that can be reimplemented by opcache for example
     if (shadow_result) {
-        result = original_zend_resolve_path(shadow_result, strlen(shadow_result));
+        zend_string *strshadow_result = zend_string_init(shadow_result, strlen(shadow_result), 0);
+        result = original_zend_resolve_path(strshadow_result);
         efree(shadow_result);
+        zend_string_release(strshadow_result);
     } else {
-        result = original_zend_resolve_path(filename, filename_len);
+        result = original_zend_resolve_path(filename);
     }
     if (SHADOW_G(debug) & SHADOW_DEBUG_RESOLVE) {
 		fprintf(stderr, "Resolve: %s -> %s\n", filename, result ? ZSTR_VAL(result) : NULL);
