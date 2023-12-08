@@ -45,7 +45,7 @@ php_stream_wrapper shadow_wrapper = {
 	0
 };
 
-static size_t shadow_dirstream_read(php_stream *stream, char *buf, size_t count);
+static ssize_t shadow_dirstream_read(php_stream *stream, char *buf, size_t count);
 static int shadow_dirstream_close(php_stream *stream, int close_handle);
 static int shadow_dirstream_rewind(php_stream *stream, off_t offset, int whence, off_t *newoffs);
 
@@ -1126,7 +1126,7 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *pa
 	return mergestream;
 }
 
-static size_t shadow_dirstream_read(php_stream *stream, char *buf, size_t count)
+static ssize_t shadow_dirstream_read(php_stream *stream, char *buf, size_t count)
 {
 	php_stream_dirent *ent = (php_stream_dirent*)buf;
 	HashTable *mergedata = (HashTable *)stream->abstract;
