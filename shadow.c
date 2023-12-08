@@ -873,7 +873,7 @@ zend_string *shadow_resolve_path(zend_string *filename)
         result = original_zend_resolve_path(filename);
     }
     if (SHADOW_G(debug) & SHADOW_DEBUG_RESOLVE) {
-		fprintf(stderr, "Resolve: %s -> %s\n", filename, result ? ZSTR_VAL(result) : NULL);
+		fprintf(stderr, "Resolve: %s -> %s\n", filename ? ZSTR_VAL(filename) : NULL, result ? ZSTR_VAL(result) : NULL);
     }
     return result;
 }
