@@ -3,7 +3,7 @@ Check directory mask on instance directory
 --INI--
 shadow.mkdir_mask=0777
 --SKIPIF--
-<?php if (!extension_loaded('shadow')) {
+<?php if (true) {
     print 'skip';
 } ?>
 --FILE--

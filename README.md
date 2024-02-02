@@ -35,13 +35,15 @@ Shadow function
 Shadow has one main function:
 
 ```c
-void shadow(string template, string instance[, array instance_only])
+void shadow(string template, string instance[, array instance_only, bool force = false])
 ```
 
 -   template is the template directory
 -   instance is instance directory
 -   instance\_only is an array of directories or filenames (relative to
     instance directory) that are instance-only
+-   force stream wrapper initialization (normally performed at request
+    initialization, but in some cases should be done separately)
 
 Other functions:
 
