@@ -4,18 +4,16 @@ ARG PHP_BUILD_DIR=/var/task
 ARG PHP_CONF_DIR=/etc/php.d
 ARG PHP_EXT_DIR=/usr/lib64/php/modules
 
+RUN yum install -y amazon-linux-extras
+RUN amazon-linux-extras enable php8.2
+RUN amazon-linux-extras install -y php8.2
 RUN yum clean all && \
     yum -y upgrade && \
-    yum -y install ilibzip-dev libonig-dev putils \
-    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm \
-      https://rpms.remirepo.net/enterprise/remi-release-7.rpm \
-      re2c \
-      yum-utils && \
-    yum-config-manager --disable remi-safe
+    yum -y install ilibzip-dev libonig-dev putils gcc make \
+    yum -y re2c \
+    yum-utils
 
-RUN yum-config-manager --enable remi-php82 && \
-    yum-config-manager --setopt=remi-php82.priority=10 --save && \
-    yum -y install php-cli php-common php-devel && \
+RUN yum -y install php-cli php-common php-devel && \
     yum clean all
 
 #Extension install
@@ -38,7 +36,8 @@ RUN cd shadow && \
     ./configure && \
     make && \
     make install && \
-    make test && \
     echo "extension=${PHP_EXT_DIR}/shadow.so" > ${PHP_CONF_DIR}/shadow.ini
+RUN cd shadow && \
+    php run-tests.php --show-diff .
 
-ENTRYPOINT ["php", "-m"]
+ENTRYPOINT ["tail", "-f", "/dev/null"]

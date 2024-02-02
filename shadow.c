@@ -48,6 +48,7 @@ php_stream_wrapper shadow_wrapper = {
 static ssize_t shadow_dirstream_read(php_stream *stream, char *buf, size_t count);
 static int shadow_dirstream_close(php_stream *stream, int close_handle);
 static int shadow_dirstream_rewind(php_stream *stream, off_t offset, int whence, off_t *newoffs);
+static void shadow_init_wrapper();
 
 static php_stream_ops shadow_dirstream_ops = {
 	NULL,
@@ -423,21 +424,25 @@ PHP_MSHUTDOWN_FUNCTION(shadow)
  */
 PHP_RINIT_FUNCTION(shadow)
 {
-	if(SHADOW_G(enabled)) {
-		zend_string *protocol;
-		protocol = zend_string_init("file", strlen("file"), 0);
-		php_unregister_url_stream_wrapper_volatile(protocol);
-		php_register_url_stream_wrapper_volatile(protocol, &shadow_wrapper);
-		zend_string_release_ex(protocol, 0);
-	}
-	SHADOW_G(template) = NULL;
-	SHADOW_G(instance) = NULL;
-	SHADOW_G(curdir) = NULL;
-	SHADOW_G(segment_id) = 0;
-	SHADOW_G(shadow_override_copy) = NULL;
+	shadow_init_wrapper();
 	return SUCCESS;
 }
 /* }}} */
+
+static void shadow_init_wrapper() {
+    if(SHADOW_G(enabled)) {
+        zend_string *protocol;
+        protocol = zend_string_init("file", strlen("file"), 0);
+        php_unregister_url_stream_wrapper_volatile(protocol);
+        php_register_url_stream_wrapper_volatile(protocol, &shadow_wrapper);
+        zend_string_release_ex(protocol, 0);
+    }
+    SHADOW_G(template) = NULL;
+    SHADOW_G(instance) = NULL;
+    SHADOW_G(curdir) = NULL;
+    SHADOW_G(segment_id) = 0;
+    SHADOW_G(shadow_override_copy) = NULL;
+}
 
 static void shadow_free_data()
 {
@@ -493,14 +498,19 @@ PHP_FUNCTION(shadow)
 	char *temp = NULL;
 	char *inst = NULL;
 	size_t temp_len, inst_len;
+	zend_bool force = 0;  // New parameter
 	HashTable *instance_only = NULL; /* paths relative to template root */
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "ss|h", &temp, &temp_len, &inst, &inst_len, &instance_only) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "ss|h!b", &temp, &temp_len, &inst, &inst_len, &instance_only, &force) == FAILURE) {
 		return;
 	}
 
 	if(!SHADOW_G(enabled)) {
 		RETURN_FALSE;
+	}
+
+	if(force) {
+		shadow_init_wrapper();
 	}
 
 	shadow_free_data();
