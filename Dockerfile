@@ -39,5 +39,3 @@ RUN cd shadow && \
     echo "extension=${PHP_EXT_DIR}/shadow.so" > ${PHP_CONF_DIR}/shadow.ini
 RUN cd shadow && \
     php run-tests.php --show-diff .
-
-ENTRYPOINT ["tail", "-f", "/dev/null"]
