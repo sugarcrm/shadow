@@ -1,0 +1,28 @@
+name: Shadow Extension Build & Test
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      
+    - name: Build and test PHP extension
+      run: |
+        docker build -t php-shadow-extension . --progress=plain
+      
+    - name: Archive test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: |
+          /var/task/shadow/*.out
+          /var/task/shadow/*.diff
+        retention-days: 7
