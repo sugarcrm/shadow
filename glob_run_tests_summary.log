@@ -1,0 +1,190 @@
+
+=====================================================================
+PHP         : /usr/bin/php
+PHP_SAPI    : cli
+PHP_VERSION : 8.3.6
+ZEND_VERSION: 4.3.6
+PHP_OS      : Linux - Linux devbox 6.8.0 #1 SMP PREEMPT_DYNAMIC Thu Jun  5 17:01:56 UTC 2025 x86_64
+INI actual  : /etc/php/8.3/cli/php.ini
+More .INIs  : /etc/php/8.3/cli/conf.d/10-opcache.ini,/etc/php/8.3/cli/conf.d/10-pdo.ini,/etc/php/8.3/cli/conf.d/15-xml.ini,/etc/php/8.3/cli/conf.d/20-calendar.ini,/etc/php/8.3/cli/conf.d/20-ctype.ini,/etc/php/8.3/cli/conf.d/20-dom.ini,/etc/php/8.3/cli/conf.d/20-exif.ini,/etc/php/8.3/cli/conf.d/20-ffi.ini,/etc/php/8.3/cli/conf.d/20-fileinfo.ini,/etc/php/8.3/cli/conf.d/20-ftp.ini,/etc/php/8.3/cli/conf.d/20-gettext.ini,/etc/php/8.3/cli/conf.d/20-iconv.ini,/etc/php/8.3/cli/conf.d/20-phar.ini,/etc/php/8.3/cli/conf.d/20-posix.ini,/etc/php/8.3/cli/conf.d/20-readline.ini,/etc/php/8.3/cli/conf.d/20-shmop.ini,/etc/php/8.3/cli/conf.d/20-simplexml.ini,/etc/php/8.3/cli/conf.d/20-sockets.ini,/etc/php/8.3/cli/conf.d/20-sysvmsg.ini,/etc/php/8.3/cli/conf.d/20-sysvsem.ini,/etc/php/8.3/cli/conf.d/20-sysvshm.ini,/etc/php/8.3/cli/conf.d/20-tokenizer.ini,/etc/php/8.3/cli/conf.d/20-xmlreader.ini,/etc/php/8.3/cli/conf.d/20-xmlwriter.ini,/etc/php/8.3/cli/conf.d/20-xsl.ini,/etc/php/8.3/cli/conf.d/50-shadow.ini
+CWD         : /app
+Extra dirs  :
+VALGRIND    : Not used
+=====================================================================
+Running selected tests.
+TEST 1/1 [tests/glob.phpt]
+========DIFF========
+[1;31m001- array(3) {[0m
+[1;32m001+ Resolve: setup.inc -> /app/tests/setup.inc[0m
+[1;32m002+ Resolve: /app/tests/setup.inc -> /app/tests/setup.inc[0m
+[1;32m003+ Resolve: /app/tests/fixtures/templatedir -> /app/tests/fixtures/templatedir[0m
+[1;32m004+ Resolve: /app/tests/fixtures/instance -> /app/tests/fixtures/instance[0m
+[1;32m005+ T2I_REFACTOR: ENTER 'txt', options: 5 (CHK_EX=Y, RET_INST=Y)[0m
+[1;32m006+ T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/txt (len 35)[0m
+[1;32m007+ T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/txt' is in TEMPLATE territory.[0m
+[1;32m008+ T2I_REFACTOR: EXIT for 'txt', returning '/app/tests/fixtures/instance/txt'[0m
+[1;32m009+ Glob: txt/*.txt => txt (/app/tests/fixtures/instance/txt)[0m
+[1;32m010+ Globbing merge: /app/tests/fixtures/instance/txt/*.txt /app/tests/fixtures/templatedir/txt/*.txt[0m
+[1;32m011+ array(4) {[0m
+       [0]=>
+       string(13) "txt/ifile.txt"
+       [1]=>
+       string(16) "txt/override.txt"
+       [2]=>
+[1;32m017+   string(16) "txt/sometext.txt"[0m
+[1;32m018+   [3]=>[0m
+       string(13) "txt/tfile.txt"
+     }
+[1;31m009- array(3) {[0m
+[1;32m021+ T2I_REFACTOR: ENTER 'txt', options: 5 (CHK_EX=Y, RET_INST=Y)[0m
+[1;32m022+ T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/txt (len 32)[0m
+[1;32m023+ T2I_REFACTOR: Path '/app/tests/fixtures/instance/txt' is in INSTANCE territory.[0m
+[1;32m024+ T2I_REFACTOR: EXIT for 'txt', returning '/app/tests/fixtures/instance/txt'[0m
+[1;32m025+ Glob: txt/*.txt => txt (/app/tests/fixtures/instance/txt)[0m
+[1;32m026+ Globbing merge: /app/tests/fixtures/instance/txt/*.txt /app/tests/fixtures/templatedir/txt/*.txt[0m
+[1;32m027+ array(4) {[0m
+       [0]=>
+       string(13) "txt/ifile.txt"
+       [1]=>
+       string(16) "txt/override.txt"
+       [2]=>
+[1;32m033+   string(16) "txt/sometext.txt"[0m
+[1;32m034+   [3]=>[0m
+       string(13) "txt/tfile.txt"
+     }
+[1;32m037+ T2I_REFACTOR: ENTER 'templdir', options: 5 (CHK_EX=Y, RET_INST=Y)[0m
+[1;32m038+ T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/templdir (len 37)[0m
+[1;32m039+ T2I_REFACTOR: Path '/app/tests/fixtures/instance/templdir' is in INSTANCE territory.[0m
+[1;32m040+ T2I_REFACTOR: EXIT for 'templdir', returning '/app/tests/fixtures/templatedir/templdir'[0m
+[1;32m041+ Glob: templdir/* => templdir (/app/tests/fixtures/templatedir/templdir)[0m
+[1;32m042+ Globbing merge: /app/tests/fixtures/templatedir/templdir/* /app/tests/fixtures/templatedir/templdir/*[0m
+     array(1) {
+       [0]=>
+       string(14) "templdir/t.txt"
+     }
+[1;32m047+ T2I_REFACTOR: ENTER 'instdir', options: 5 (CHK_EX=Y, RET_INST=Y)[0m
+[1;32m048+ T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/instdir (len 36)[0m
+[1;32m049+ T2I_REFACTOR: Path '/app/tests/fixtures/instance/instdir' is in INSTANCE territory.[0m
+[1;32m050+ T2I_REFACTOR: EXIT for 'instdir', returning '/app/tests/fixtures/instance/instdir'[0m
+[1;32m051+ Glob: instdir/* => instdir (/app/tests/fixtures/instance/instdir)[0m
+[1;32m052+ Globbing merge: /app/tests/fixtures/instance/instdir/* /app/tests/fixtures/templatedir/instdir/*[0m
+     array(1) {
+       [0]=>
+       string(13) "instdir/t.txt"
+     }
+[1;32m057+ T2I_REFACTOR: ENTER 'cache', options: 0 (CHK_EX=N, RET_INST=N)[0m
+[1;32m058+ T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/cache (len 34)[0m
+[1;32m059+ T2I_REFACTOR: Path '/app/tests/fixtures/instance/cache' is in INSTANCE territory.[0m
+[1;32m060+ T2I_REFACTOR: EXIT for 'cache', returning '/app/tests/fixtures/instance/cache'[0m
+[1;32m061+ Glob instance only: cache (/app/tests/fixtures/instance/cache)[0m
+     array(1) {
+       [0]=>
+       string(15) "cache/cache.txt"
+     }
+[1;31m029- array(9) {[0m
+[1;32m066+ T2I_REFACTOR: ENTER '', options: 5 (CHK_EX=Y, RET_INST=Y)[0m
+[1;32m067+ T2I_REFACTOR: No valid realpath found for ''.[0m
+[1;32m068+ Glob: * =>  ((null))[0m
+[1;32m069+ Globbing template: *[0m
+[1;32m070+ array(13) {[0m
+       [0]=>
+[1;32m072+   string(3) "api"[0m
+[1;32m073+   [1]=>[0m
+       string(5) "cache"
+[1;31m032-   [1]=>[0m
+[1;32m075+   [2]=>[0m
+[1;32m076+   string(8) "conflict"[0m
+[1;32m077+   [3]=>[0m
+[1;32m078+   string(9) "conflict2"[0m
+[1;32m079+   [4]=>[0m
+       string(6) "custom"
+[1;31m034-   [2]=>[0m
+[1;32m081+   [5]=>[0m
+       string(12) "iinclude.php"
+[1;31m036-   [3]=>[0m
+[1;32m083+   [6]=>[0m
+       string(17) "instance_only.php"
+[1;31m038-   [4]=>[0m
+[1;32m085+   [7]=>[0m
+       string(7) "instdir"
+[1;31m040-   [5]=>[0m
+[1;32m087+   [8]=>[0m
+       string(12) "manifest.php"
+[1;31m042-   [6]=>[0m
+[1;32m089+   [9]=>[0m
+       string(10) "nowritedir"
+[1;31m044-   [7]=>[0m
+[1;32m091+   [10]=>[0m
+[1;32m092+   string(3) "qwe"[0m
+[1;32m093+   [11]=>[0m
+       string(8) "test.php"
+[1;31m046-   [8]=>[0m
+[1;32m095+   [12]=>[0m
+       string(3) "txt"
+     }
+[1;31m049- array(9) {[0m
+[1;32m098+ T2I_REFACTOR: ENTER '', options: 5 (CHK_EX=Y, RET_INST=Y)[0m
+[1;32m099+ T2I_REFACTOR: No valid realpath found for ''.[0m
+[1;32m100+ Glob: ** =>  ((null))[0m
+[1;32m101+ Globbing template: **[0m
+[1;32m102+ array(13) {[0m
+       [0]=>
+[1;32m104+   string(3) "api"[0m
+[1;32m105+   [1]=>[0m
+       string(5) "cache"
+[1;31m052-   [1]=>[0m
+[1;32m107+   [2]=>[0m
+[1;32m108+   string(8) "conflict"[0m
+[1;32m109+   [3]=>[0m
+[1;32m110+   string(9) "conflict2"[0m
+[1;32m111+   [4]=>[0m
+       string(6) "custom"
+[1;31m054-   [2]=>[0m
+[1;32m113+   [5]=>[0m
+       string(12) "iinclude.php"
+[1;31m056-   [3]=>[0m
+[1;32m115+   [6]=>[0m
+       string(17) "instance_only.php"
+[1;31m058-   [4]=>[0m
+[1;32m117+   [7]=>[0m
+       string(7) "instdir"
+[1;31m060-   [5]=>[0m
+[1;32m119+   [8]=>[0m
+       string(12) "manifest.php"
+[1;31m062-   [6]=>[0m
+[1;32m121+   [9]=>[0m
+       string(10) "nowritedir"
+[1;31m064-   [7]=>[0m
+[1;32m123+   [10]=>[0m
+[1;32m124+   string(3) "qwe"[0m
+[1;32m125+   [11]=>[0m
+       string(8) "test.php"
+[1;31m066-   [8]=>[0m
+[1;32m127+   [12]=>[0m
+       string(3) "txt"
+     }
+[1;32m130+ T2I_REFACTOR: ENTER '', options: 5 (CHK_EX=Y, RET_INST=Y)[0m
+[1;32m131+ T2I_REFACTOR: No valid realpath found for ''.[0m
+[1;32m132+ Glob: * =>  ((null))[0m
+[1;32m133+ Globbing template: *[0m
+     array(2) {
+       [0]=>
+       string(8) "instance"
+--
+========DONE========
+[1;31mFAIL[0m Check globs [tests/glob.phpt]
+=====================================================================
+Number of tests :     1                 1
+Tests skipped   :     0 (  0.0%) --------
+Tests warned    :     0 (  0.0%) (  0.0%)
+Tests failed    :     1 (100.0%) (100.0%)
+Tests passed    :     0 (  0.0%) (  0.0%)
+---------------------------------------------------------------------
+Time taken      :     0 seconds
+=====================================================================
+
+=====================================================================
+FAILED TEST SUMMARY
+---------------------------------------------------------------------
+Check globs [tests/glob.phpt]
+=====================================================================

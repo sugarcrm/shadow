@@ -1,0 +1,130 @@
+Resolve: setup.inc -> /app/tests/setup.inc
+Resolve: /app/tests/setup.inc -> /app/tests/setup.inc
+Resolve: /app/tests/fixtures/templatedir -> /app/tests/fixtures/templatedir
+Resolve: /app/tests/fixtures/instance -> /app/tests/fixtures/instance
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/txt', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/txt (len 35)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/txt' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/txt', returning '/app/tests/fixtures/instance/txt'
+array(4) {
+  [0]=>
+  string(13) "txt/ifile.txt"
+  [1]=>
+  string(16) "txt/override.txt"
+  [2]=>
+  string(16) "txt/sometext.txt"
+  [3]=>
+  string(13) "txt/tfile.txt"
+}
+T2I_REFACTOR: ENTER '/app/tests/fixtures/instance/txt', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/txt (len 32)
+T2I_REFACTOR: Path '/app/tests/fixtures/instance/txt' is in INSTANCE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/instance/txt', returning '/app/tests/fixtures/instance/txt'
+array(4) {
+  [0]=>
+  string(13) "txt/ifile.txt"
+  [1]=>
+  string(16) "txt/override.txt"
+  [2]=>
+  string(16) "txt/sometext.txt"
+  [3]=>
+  string(13) "txt/tfile.txt"
+}
+T2I_REFACTOR: ENTER '/app/tests/fixtures/instance/templdir', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/templdir (len 37)
+T2I_REFACTOR: Path '/app/tests/fixtures/instance/templdir' is in INSTANCE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/instance/templdir', returning '/app/tests/fixtures/templatedir/templdir'
+array(1) {
+  [0]=>
+  string(14) "templdir/t.txt"
+}
+T2I_REFACTOR: ENTER '/app/tests/fixtures/instance/instdir', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/instdir (len 36)
+T2I_REFACTOR: Path '/app/tests/fixtures/instance/instdir' is in INSTANCE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/instance/instdir', returning '/app/tests/fixtures/instance/instdir'
+array(1) {
+  [0]=>
+  string(13) "instdir/t.txt"
+}
+T2I_REFACTOR: ENTER '/app/tests/fixtures/instance/cache', options: 4 (CHK_EX=N, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/cache (len 34)
+T2I_REFACTOR: Path '/app/tests/fixtures/instance/cache' is in INSTANCE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/instance/cache', returning '/app/tests/fixtures/instance/cache'
+array(1) {
+  [0]=>
+  string(15) "cache/cache.txt"
+}
+T2I_REFACTOR: ENTER '/app/tests/fixtures/instance', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance (len 28)
+T2I_REFACTOR: Path '/app/tests/fixtures/instance' IS the instance directory itself.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/instance', returning '/app/tests/fixtures/instance'
+array(13) {
+  [0]=>
+  string(3) "api"
+  [1]=>
+  string(5) "cache"
+  [2]=>
+  string(8) "conflict"
+  [3]=>
+  string(9) "conflict2"
+  [4]=>
+  string(6) "custom"
+  [5]=>
+  string(12) "iinclude.php"
+  [6]=>
+  string(17) "instance_only.php"
+  [7]=>
+  string(7) "instdir"
+  [8]=>
+  string(12) "manifest.php"
+  [9]=>
+  string(10) "nowritedir"
+  [10]=>
+  string(3) "qwe"
+  [11]=>
+  string(8) "test.php"
+  [12]=>
+  string(3) "txt"
+}
+T2I_REFACTOR: ENTER '/app/tests/fixtures/instance', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance (len 28)
+T2I_REFACTOR: Path '/app/tests/fixtures/instance' IS the instance directory itself.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/instance', returning '/app/tests/fixtures/instance'
+array(13) {
+  [0]=>
+  string(3) "api"
+  [1]=>
+  string(5) "cache"
+  [2]=>
+  string(8) "conflict"
+  [3]=>
+  string(9) "conflict2"
+  [4]=>
+  string(6) "custom"
+  [5]=>
+  string(12) "iinclude.php"
+  [6]=>
+  string(17) "instance_only.php"
+  [7]=>
+  string(7) "instdir"
+  [8]=>
+  string(12) "manifest.php"
+  [9]=>
+  string(10) "nowritedir"
+  [10]=>
+  string(3) "qwe"
+  [11]=>
+  string(8) "test.php"
+  [12]=>
+  string(3) "txt"
+}
+T2I_REFACTOR: ENTER '/app/tests/fixtures', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures (len 19)
+T2I_REFACTOR: Path '/app/tests/fixtures' is outside template/instance or does not meet criteria.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures', returning 'NULL (use original)'
+array(2) {
+  [0]=>
+  string(8) "instance"
+  [1]=>
+  string(11) "templatedir"
+}

@@ -178,7 +178,7 @@ PHP_INI_END()
  */
 #define SHADOW_OVERRIDE(func) \
 	orig_##func = NULL; \
-     	zend_string * key_##func = zend_string_init(#func, strlen(#func), 0);\
+	zend_string * key_##func = zend_string_init(#func, strlen(#func), 0);\
 	if ((orig = zend_hash_find_ptr(CG(function_table), key_##func)) != NULL) { \
         orig_##func = orig->internal_function.handler; \
         orig->internal_function.handler = shadow_##func; \
@@ -294,7 +294,6 @@ PHP_MINIT_FUNCTION(shadow)
 	SHADOW_CONSTANT(SHADOW_DEBUG_TOUCH);
 	SHADOW_CONSTANT(SHADOW_DEBUG_CHMOD);
 	SHADOW_CONSTANT(SHADOW_DEBUG_OVERRIDE);
-	SHADOW_CONSTANT(SHADOW_DEBUG_GLOB);
 
 	plain_ops = php_plain_files_wrapper.wops;
 
@@ -731,6 +730,10 @@ static inline char *instance_to_template(const char *instname, int len)
 /* if given instance path, return realpath */
 #define OPT_RETURN_INSTANCE 4
 
+/*
+Returns new instance path or NULL if template path is OK
+filename is relative to template root
+*/
 static char *template_to_instance(const char *filename, int options)
 {
     char *realpath = NULL;
@@ -742,7 +745,7 @@ static char *template_to_instance(const char *filename, int options)
     }
 
     if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) {
-        fprintf(stderr, "T2I_REFACTOR: ENTER '%s', options: %d (CHK_EX=%s, RET_INST=%s)\n", filename, options, (options & OPT_CHECK_EXISTS) ? "Y" : "N", (options & OPT_RETURN_INSTANCE) ? "Y" : "N");
+        fprintf(stderr, "T2I_REFACTOR: ENTER '%s', options: %d (CHK_EX=%s, RET_INST=%s)\\n", filename, options, (options & OPT_CHECK_EXISTS) ? "Y" : "N", (options & OPT_RETURN_INSTANCE) ? "Y" : "N");
     }
 
     // Initial attempt to get the real path
@@ -751,7 +754,7 @@ static char *template_to_instance(const char *filename, int options)
     // If initial get_full_path fails, try to resolve segment by segment considering overrides
     if (!realpath && strncmp(filename, SHADOW_G(template)->val, ZSTR_LEN(SHADOW_G(template))) == 0) {
         if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) {
-            fprintf(stderr, "T2I_REFACTOR: Initial get_full_path failed for '%s'. Attempting segmented resolution.\n", filename);
+            fprintf(stderr, "T2I_REFACTOR: Initial get_full_path failed for '%s'. Attempting segmented resolution.\\n", filename);
         }
         const char *template_root = SHADOW_G(template)->val;
         size_t template_root_len = ZSTR_LEN(SHADOW_G(template));
@@ -765,11 +768,7 @@ static char *template_to_instance(const char *filename, int options)
         char *temp_path_to_check = NULL;
         bool possible_resolution = true;
 
-        while ((segment = php_strtok_r(remaining_path_part, "/", &remaining_path_part))) {
-            // Reduced verbosity in this loop
-            /* if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) {
-                fprintf(stderr, "T2I_REFACTOR: Segment: '%s', Checking effective path: '%s'\n", segment, temp_path_to_check);
-            } */
+        while ((segment = php_strtok_r(remaining_path_part, "/", &remaining_path_part))) { // Corrected function name
             if (!temp_path_to_check) {
                 spprintf(&temp_path_to_check, 0, "%s/%s", current_resolved_parent_abs, segment);
             } else {
@@ -778,44 +777,45 @@ static char *template_to_instance(const char *filename, int options)
                 efree(old_temp_path);
             }
 
-            /* if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) {
-                fprintf(stderr, "T2I_REFACTOR: Segment: '%s', Checking effective path: '%s'\n", segment, temp_path_to_check);
-            } */
+            if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) {
+                fprintf(stderr, "T2I_REFACTOR: Segment: '%s', Checking effective path: '%s'\\n", segment, temp_path_to_check);
+            }
 
             php_stream_statbuf ssb_segment;
             if (plain_ops->url_stat(&php_plain_files_wrapper, temp_path_to_check, PHP_STREAM_URL_STAT_QUIET, &ssb_segment, NULL) == 0) {
                 efree(current_resolved_parent_abs);
                 current_resolved_parent_abs = estrdup(temp_path_to_check);
                 if (S_ISDIR(ssb_segment.sb.st_mode)) {
-                    /* if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Path '%s' is a directory.\n", temp_path_to_check); */
-                } else {
-                    /* if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Path '%s' is a file.\n", temp_path_to_check); */
-                    if (remaining_path_part && *remaining_path_part != '\0') {
-                        /* if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Path '%s' is a file, but has remaining path '%s'. Invalid resolution path.\n", temp_path_to_check, remaining_path_part); */
+                    // This segment is a directory, continue to next segment or it is the target itself
+                    if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Path '%s' is a directory.\\n", temp_path_to_check);
+                } else { // It is a file
+                    if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Path '%s' is a file.\\n", temp_path_to_check);
+                    if (remaining_path_part && *remaining_path_part != '\0') { // If it is a file, but there are more segments, this path is invalid for further resolution
+                        if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Path '%s' is a file, but has remaining path '%s'. Invalid resolution path.\\n", temp_path_to_check, remaining_path_part);
                         possible_resolution = false;
                         break;
                     }
                 }
-            } else {
-                /* if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Stat failed for instance segment '%s'.\n", temp_path_to_check); */
+            } else { // Stat failed for this segment in instance, resolution fails
+                if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Stat failed for instance segment '%s'.\\n", temp_path_to_check);
                 possible_resolution = false;
                 break;
             }
-        }
+        } // End while strtokr
 
-        if (possible_resolution && current_resolved_parent_abs) {
-            realpath = get_full_path(current_resolved_parent_abs);
-            if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Segmented resolution resulted in realpath: '%s'\n", realpath ? realpath : "NULL");
+        if (possible_resolution && current_resolved_parent_abs) { // current_resolved_parent_abs is actually the full resolved path here
+            realpath = get_full_path(current_resolved_parent_abs); // Normalize the successfully resolved instance path
+            if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Segmented resolution resulted in realpath: '%s'\\n", realpath ? realpath : "NULL");
         }
 
         if (current_resolved_parent_abs) efree(current_resolved_parent_abs);
-        if (remaining_path_part && strlen(remaining_path_part) == 0) { efree(remaining_path_part); }
-        else if (remaining_path_part == NULL && segment != NULL) { }
+        if (remaining_path_part && strlen(remaining_path_part) == 0) { /* php_strtokr makes it empty not NULL */ efree(remaining_path_part); }
+        else if (remaining_path_part == NULL && segment != NULL) { /* Path was just one segment */ }
         else if (remaining_path_part) { efree(remaining_path_part); }
 
 
         if (temp_path_to_check) efree(temp_path_to_check);
-    }
+    } // End if !realpath initial attempt
 
     if (realpath) {
         fnamelen = strlen(realpath);
@@ -823,50 +823,52 @@ static char *template_to_instance(const char *filename, int options)
             realpath[fnamelen - 1] = '\0';
             fnamelen--;
         }
-        if (SHADOW_G(debug) & SHADOW_DEBUG_FULLPATH) fprintf(stderr, "T2I_REFACTOR: Final realpath for checks: %s (len %d)\n", realpath, fnamelen);
+        if (SHADOW_G(debug) & SHADOW_DEBUG_FULLPATH) fprintf(stderr, "T2I_REFACTOR: Final realpath for checks: %s (len %d)\\n", realpath, fnamelen);
     } else {
-        if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: No valid realpath found for '%s'.\n", filename);
+        if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: No valid realpath found for '%s'.\\n", filename);
         if (SHADOW_G(curdir)) { free(SHADOW_G(curdir)); SHADOW_G(curdir) = NULL; }
-        return NULL;
+        return NULL; // Cannot resolve path
     }
 
+    // Main resolution logic based on realpath
     if (is_subdir_of(SHADOW_G(template)->val, ZSTR_LEN(SHADOW_G(template)), realpath, fnamelen)) {
-        if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Path '%s' is in TEMPLATE territory.\n", realpath);
+        if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Path '%s' is in TEMPLATE territory.\\n", realpath);
         if ((options & OPT_CHECK_EXISTS) && shadow_cache_get(realpath, &newname) == SUCCESS) {
-            if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Cache hit for '%s' => '%s'\n", realpath, newname ? newname : "NULL");
+            if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Cache hit for '%s' => '%s'\\n", realpath, newname ? newname : "NULL");
             if (realpath) efree(realpath);
             if (SHADOW_G(curdir)) { free(SHADOW_G(curdir)); SHADOW_G(curdir) = NULL; }
             return newname;
         }
         spprintf(&newname, 0, "%s/%s", SHADOW_G(instance)->val, realpath + ZSTR_LEN(SHADOW_G(template)) + 1);
         if ((options & OPT_CHECK_EXISTS) && !instance_only_subdir(realpath + ZSTR_LEN(SHADOW_G(template)) + 1)) {
-            if (VCWD_ACCESS(newname, F_OK) != 0) {
+            if (VCWD_ACCESS(newname, F_OK) != 0) { // Instance override does not exist
                 efree(newname);
-                newname = NULL;
+                newname = NULL; // Fallback to template path (original realpath)
             }
         }
         if (!(options & OPT_SKIP_CACHE)) shadow_cache_put(realpath, newname);
     } else if (is_subdir_of(SHADOW_G(instance)->val, ZSTR_LEN(SHADOW_G(instance)), realpath, fnamelen)) {
-        if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Path '%s' is in INSTANCE territory.\n", realpath);
+        if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Path '%s' is in INSTANCE territory.\\n", realpath);
         if (options & OPT_CHECK_EXISTS) {
             if (!instance_only_subdir(realpath + ZSTR_LEN(SHADOW_G(instance)) + 1) && VCWD_ACCESS(realpath, F_OK) != 0) {
                 spprintf(&newname, 0, "%s/%s", SHADOW_G(template)->val, realpath + ZSTR_LEN(SHADOW_G(instance)) + 1);
-            } else {
+            } else { // Exists in instance or is instance_only
                 if (options & OPT_RETURN_INSTANCE) newname = estrdup(realpath);
-                else newname = NULL;
+                else newname = NULL; // Indicates use original path, but it is an instance path already
             }
-        } else {
+        } else { // Not checking existence, assume write, so use instance path
             newname = estrdup(realpath);
         }
     } else if ((options & OPT_RETURN_INSTANCE) && strncmp(ZSTR_VAL(SHADOW_G(instance)), realpath, ZSTR_LEN(SHADOW_G(instance))) == 0 && (realpath[ZSTR_LEN(SHADOW_G(instance))] == '\0' || IS_SLASH(realpath[ZSTR_LEN(SHADOW_G(instance))]))) {
-        if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Path '%s' IS the instance directory itself.\n", realpath);
+        if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Path '%s' IS the instance directory itself.\\n", realpath);
         newname = estrdup(realpath);
     } else {
-        if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Path '%s' is outside template/instance or does not meet criteria.\n", realpath);
+        if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: Path '%s' is outside template/instance or doesn't meet criteria.\\n", realpath);
+        // Path is outside defined shadow areas, or no specific override logic applies. newname remains NULL.
     }
 
     if (realpath) efree(realpath);
-    if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: EXIT for '%s', returning '%s'\n", filename, newname ? newname : "NULL (use original)");
+    if (SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "T2I_REFACTOR: EXIT for '%s', returning '%s'\\n", filename, newname ? newname : "NULL (use original)");
     if (SHADOW_G(curdir)) { free(SHADOW_G(curdir)); SHADOW_G(curdir) = NULL; }
     return newname;
 }
@@ -952,7 +954,7 @@ static php_stream *shadow_stream_opener(php_stream_wrapper *wrapper, const char 
 			char *instname = template_to_instance(filename, OPT_CHECK_EXISTS);
 			if(instname) {
 				if(SHADOW_G(debug) & SHADOW_DEBUG_OPEN) fprintf(stderr, "Opening instead: %s %s\n", instname, mode);
-		 		res = plain_ops->stream_opener(wrapper, instname, mode, options|STREAM_ASSUME_REALPATH, opened_path, context STREAMS_CC);
+				res = plain_ops->stream_opener(wrapper, instname, mode, options|STREAM_ASSUME_REALPATH, opened_path, context STREAMS_CC);
 				if(!res && (SHADOW_G(debug) & SHADOW_DEBUG_FAIL)) {
 					fprintf(stderr, "Open FAIL: %s %s [%d]\n", instname, mode, errno);
 				}
@@ -986,7 +988,7 @@ static int shadow_stat(php_stream_wrapper *wrapper, const char *url, int flags, 
     }
 
     if (SHADOW_G(debug) & SHADOW_DEBUG_STAT) {
-        fprintf(stderr, "STAT_DEBUG: Values: OCE=%d, ORI=%d, Combo=%d. About to call t2i for '%s' with options: %d\n", OPT_CHECK_EXISTS, OPT_RETURN_INSTANCE, (OPT_CHECK_EXISTS | OPT_RETURN_INSTANCE), url, (OPT_CHECK_EXISTS | OPT_RETURN_INSTANCE));
+        fprintf(stderr, "STAT_DEBUG: Values: OCE=%d, ORI=%d, Combo=%d. About to call t2i for '%s' with options: %d\\n", OPT_CHECK_EXISTS, OPT_RETURN_INSTANCE, (OPT_CHECK_EXISTS | OPT_RETURN_INSTANCE), url, (OPT_CHECK_EXISTS | OPT_RETURN_INSTANCE));
     }
     instname = template_to_instance(url, OPT_CHECK_EXISTS | OPT_RETURN_INSTANCE);
 
@@ -1122,7 +1124,7 @@ static int shadow_rmdir(php_stream_wrapper *wrapper, const char *url, int option
 
 static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *path, const char *mode, int options, zend_string **opened_path, php_stream_context *context STREAMS_DC)
 {
-    if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "shadow_dir_opener: ENTER Path: %s, Mode: %s\n", path, mode);
+    if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "shadow_dir_opener: ENTER Path: %s, Mode: %s\\n", path, mode);
 	char *instname;
 	php_stream *tempdir = NULL, *instdir, *mergestream;
 	HashTable *mergedata;
@@ -1190,11 +1192,11 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *pa
 	ALLOC_HASHTABLE(mergedata);
 	zend_hash_init(mergedata, 10, NULL, NULL, 0);
 	while(php_stream_readdir(tempdir, &entry)) {
-            if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "shadow_dir_opener: Adding from TEMPLATE to mergedata: %s\n", entry.d_name);
+            if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "shadow_dir_opener: Adding from TEMPLATE to mergedata: %s\\n", entry.d_name);
 		zend_hash_str_add_new_ptr(mergedata, entry.d_name, strlen(entry.d_name), &dummy);
 	}
 	while(php_stream_readdir(instdir, &entry)) {
-            if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "shadow_dir_opener: Adding/Updating from INSTANCE to mergedata: %s\n", entry.d_name);
+            if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "shadow_dir_opener: Adding/Updating from INSTANCE to mergedata: %s\\n", entry.d_name);
 		zend_hash_str_update_ptr(mergedata, entry.d_name, strlen(entry.d_name), &dummy);
 	}
 	zend_hash_internal_pointer_reset(mergedata);
@@ -1217,9 +1219,9 @@ static ssize_t shadow_dirstream_read(php_stream *stream, char *buf, size_t count
         zend_string *current_key = NULL; zend_ulong current_num;
         zend_hash_get_current_key((HashTable *)stream->abstract, &current_key, &current_num);
         if (current_key) {
-            fprintf(stderr, "shadow_dirstream_read: Attempting to read entry: %s\n", ZSTR_VAL(current_key));
+            fprintf(stderr, "shadow_dirstream_read: Attempting to read entry: %s\\n", ZSTR_VAL(current_key));
         } else {
-            fprintf(stderr, "shadow_dirstream_read: Attempting to read entry (non-string key or end of hash)\n");
+            fprintf(stderr, "shadow_dirstream_read: Attempting to read entry (non-string key or end of hash)\\n");
         }
     }
 	php_stream_dirent *ent = (php_stream_dirent*)buf;
@@ -1240,7 +1242,7 @@ static ssize_t shadow_dirstream_read(php_stream *stream, char *buf, size_t count
 	zend_hash_move_forward(mergedata);
 
 	PHP_STRLCPY(ent->d_name, ZSTR_VAL(name), sizeof(ent->d_name), ZSTR_LEN(name));
-    if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "shadow_dirstream_read: Copied to dirent: %s\n", ent->d_name);
+    if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "shadow_dirstream_read: Copied to dirent: %s\\n", ent->d_name);
 	return sizeof(php_stream_dirent);
 }
 
@@ -1524,26 +1526,13 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	char *filename = NULL;
 	size_t filename_len;
 	zend_long flags;
-
-	char *mask_ptr = NULL; // Points to the start of glob pattern chars like '*'
-	char *original_path_prefix = NULL; // The path prefix from the original glob pattern string, e.g., "txt/" or ""
-	char *glob_pattern_itself = NULL; // The actual pattern part, e.g., "*.txt" or "*"
-	char *abs_path_base = NULL; // Absolute version of original_path_prefix for internal use
-
-	char *inst_base_path = NULL; // Base path for instance glob (absolute)
-	char *templ_base_path = NULL; // Base path for template glob (absolute)
-	int inst_base_len = 0;
-	int templ_base_len = 0;
-
-	char *full_inst_glob_path = NULL;  // inst_base_path + glob_pattern_itself
-	char *full_templ_glob_path = NULL; // templ_base_path + glob_pattern_itself
-
-	zval *src_entry; // Iterator for results from orig_glob
-	HashTable *mergedata; // To collect and merge results
-	void *dummy = (void *)1; // Dummy value for hash table
-	int skip_template = 0;
-	char cwd_buf[MAXPATHLEN];
-	cwd_state state = {0}; // For VCWD_GETCWD, using the standard PHP struct
+	char *instname=NULL, *templname=NULL, *mask=NULL, *path=NULL;
+	zval instdata, templdata;
+	zval *src_entry;
+	HashTable *mergedata;
+	void *dummy = (void *)1;
+	int instlen, templen;
+	int skip_template=0;
 
 	if(!SHADOW_ENABLED()) {
 		orig_glob(INTERNAL_FUNCTION_PARAM_PASSTHRU);
@@ -1558,203 +1547,120 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 		return;
 	}
 
-	if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: Original filename: '%s'\n", filename);
-
-	// 1. Separate the path prefix from the glob pattern itself
-	mask_ptr = strpbrk(filename, "*?[");
-	if (!mask_ptr) { // No glob characters found
-		glob_pattern_itself = estrdup(""); // Should this be an error or treat as plain path? Glob usually expects a pattern.
-		original_path_prefix = estrdup(filename);
-		// This case (no pattern) might lead to issues as `php_glob` expects a pattern.
-		// For now, let it proceed; template_to_instance might handle it if `filename` is a dir.
-	} else {
-		glob_pattern_itself = estrdup(mask_ptr);
-		original_path_prefix = estrndup(filename, mask_ptr - filename);
+	mask = strpbrk(filename, "*?[");
+	if(!mask) {
+		mask = filename+filename_len;
 	}
-	if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: Original path prefix: '%s', Glob pattern itself: '%s'\n", original_path_prefix, glob_pattern_itself);
+	while(--mask > filename && !IS_SLASH(*mask)); /* look up for slash */
+	path = estrndup(filename, (mask - filename) > 0 ? (mask - filename) : 0);
+	/* path will be path part up to the directory containing first glob char */
 
-	// 2. Make the extracted path prefix absolute for internal processing
-	if (original_path_prefix[0] == '\0' || !IS_ABSOLUTE_PATH(original_path_prefix, strlen(original_path_prefix))) {
-		if (!VCWD_GETCWD(cwd_buf, MAXPATHLEN)) {
-			php_error_docref(NULL, E_WARNING, "Cannot get current working directory");
-			if (original_path_prefix) efree(original_path_prefix);
-			if (glob_pattern_itself) efree(glob_pattern_itself);
-			RETURN_FALSE;
-		}
-		if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: CWD: '%s'\n", cwd_buf);
-		if (original_path_prefix[0] == '\0') {
-			abs_path_base = estrdup(cwd_buf);
-		} else {
-			spprintf(&abs_path_base, 0, "%s/%s", cwd_buf, original_path_prefix);
-			// Remove trailing slash from abs_path_base if original_path_prefix had one and it's not root
-			size_t abs_len = strlen(abs_path_base);
-			if (abs_len > 1 && IS_SLASH(abs_path_base[abs_len-1])) {
-				abs_path_base[abs_len-1] = '\0';
-			}
-		}
-		if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: Path prefix was relative/empty. Absolute base for shadowing: '%s'\n", abs_path_base);
-	} else {
-		abs_path_base = estrdup(original_path_prefix);
-		size_t abs_len = strlen(abs_path_base);
-		if (abs_len > 1 && IS_SLASH(abs_path_base[abs_len-1])) {
-			abs_path_base[abs_len-1] = '\0';
-		}
-		if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: Path prefix was absolute. Base for shadowing: '%s'\n", abs_path_base);
-	}
-
-	// 3. Determine instance and template base paths for globbing using the absolute base
-	if(is_instance_only(abs_path_base)) {
-		if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: abs_path_base '%s' is instance_only. Calling t2i with OPT_RETURN_INSTANCE.\n", abs_path_base);
-		inst_base_path = template_to_instance(abs_path_base, OPT_RETURN_INSTANCE);
+	if(is_instance_only(path)) {
+		/* if it's instance-only dir, we won't merge in any case */
+		instname = template_to_instance(path, 0);
 		skip_template = 1;
-		if(SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: Instance-only mapping: abs_path_base='%s' -> inst_base_path='%s'\n", abs_path_base, inst_base_path ? inst_base_path : "NULL");
-		if (!inst_base_path) {
-		    if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: Instance-only path '%s' did not resolve. Returning empty.\n", abs_path_base);
-			goto cleanup_and_return_empty;
-		}
+		if(SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Glob instance only: %s (%s)\n", path, instname);
 	} else {
-		if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: abs_path_base '%s' is NOT instance_only. Calling t2i with CHECK_EXISTS | RETURN_INSTANCE.\n", abs_path_base);
-		inst_base_path = template_to_instance(abs_path_base, OPT_CHECK_EXISTS | OPT_RETURN_INSTANCE);
-		if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: Shadow mapping: abs_path_base='%s' -> inst_base_path='%s'\n", abs_path_base, inst_base_path ? inst_base_path : "NULL");
-		if(!inst_base_path) { // No specific instance or template override for this base path, or it doesn't exist in instance.
-			if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: No instance mapping for abs_path_base '%s'. Globbing original filename '%s' directly.\n", abs_path_base, filename);
-			orig_glob(INTERNAL_FUNCTION_PARAM_PASSTHRU); // Use the original filename as passed by user
-			goto cleanup_paths; // Standard cleanup
+		instname = template_to_instance(path, OPT_CHECK_EXISTS|OPT_RETURN_INSTANCE);
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Glob: %s => %s (%s)\n", filename, path, instname);
+		if(!instname) {
+			/* we don't have instance dir, don't bother with merging */
+			if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing template: %s\n", filename);
+			orig_glob(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+			efree(path);
+			return;
 		}
 	}
-	inst_base_len = strlen(inst_base_path);
-
+	/* here we have instname */
+	instlen = strlen(instname);
+#if 0
+	if(is_subdir_of(SHADOW_G(template), SHADOW_G(template_len), instname, instlen)) {
+		/* We can get template dir here, if instance dir does not exist, we still have only one directory then */
+		instname = erealloc(instname, instlen+strlen(mask)+1);
+		strcat(instname, mask);
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing template(2): %s\n", instname);
+		shadow_call_replace_name(0, instname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		efree(path);
+		return;
+	}
+#endif
+	/* We got instance dir, does template dir exist too? */
 	if(!skip_template) {
-		if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: Attempting to find corresponding template for inst_base_path '%s'\n", inst_base_path);
-		templ_base_path = instance_to_template(inst_base_path, inst_base_len); // expects instance path
-		if(!templ_base_path) {
+		templname = instance_to_template(instname, instlen);
+		if(!templname) {
 			skip_template = 1;
-			if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: No corresponding template path found for inst_base_path '%s'. Skipping template search.\n", inst_base_path);
-		} else {
-			if (strcmp(templ_base_path, inst_base_path) == 0 && ZSTR_LEN(SHADOW_G(template)) != ZSTR_LEN(SHADOW_G(instance)) ) {
-                 // If instance_to_template returns the same path as inst_base_path, AND template and instance are different,
-                 // it means inst_base_path was already a template path. So, no separate template globbing needed.
-                 if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: inst_base_path '%s' is already the template path. Skipping redundant template glob.\n", inst_base_path);
-                 skip_template = 1;
-                 efree(templ_base_path);
-                 templ_base_path = NULL;
-            } else {
-				if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: Corresponding template base path: '%s'\n", templ_base_path);
-				templ_base_len = strlen(templ_base_path);
-			}
 		}
 	}
-
-	// 4. Construct full glob paths for instance and template
-	spprintf(&full_inst_glob_path, 0, "%s%s%s", inst_base_path, (inst_base_len > 0 && IS_SLASH(inst_base_path[inst_base_len-1])) ? "" : (strlen(glob_pattern_itself)>0 ? "/" : ""), glob_pattern_itself);
-	if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: Full instance glob path: '%s'\n", full_inst_glob_path);
-
-	if(!skip_template && templ_base_path != NULL) {
-		spprintf(&full_templ_glob_path, 0, "%s%s%s", templ_base_path, (templ_base_len > 0 && IS_SLASH(templ_base_path[templ_base_len-1])) ? "" : (strlen(glob_pattern_itself)>0 ? "/" : ""), glob_pattern_itself);
-		if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: Full template glob path: '%s'\n", full_templ_glob_path);
+	instname = erealloc(instname, instlen+strlen(mask)+1);
+	strcat(instname, mask);
+#if 0
+/*
+ * Remove existance check for template - since we'd need to translate names here anyway, we better fall though and have glob return empty
+ */
+	if(VCWD_ACCESS(templname, F_OK) != 0) {
+		efree(templname);
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing instance: %s\n", instname);
+		shadow_call_replace_name(0, instname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+		efree(path);
+		return;
 	}
-
-	if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: Globbing merge. Instance_glob_path: '%s', Template_glob_path: '%s'\n", full_inst_glob_path, full_templ_glob_path ? full_templ_glob_path : "N/A");
-
+#endif
+	/* We have both, so we will have to merge */
 	ALLOC_HASHTABLE(mergedata);
 	zend_hash_init(mergedata, 10, NULL, NULL, 0);
 
-	// 5. Perform glob on template path
-	// orig_glob populates the main 'return_value' of this function (shadow_glob)
-	// We must process it before the next call to orig_glob, or it will be overwritten.
-	if(!skip_template && full_templ_glob_path != NULL) {
-		// Prepare return_value for orig_glob
-		zval_dtor(return_value); // Clear any previous content from parameter parsing
-		array_init(return_value);
+	if(!skip_template && templname != NULL) {
+		templen = strlen(templname);
+		templname = erealloc(templname, templen+strlen(mask)+1);
+		strcat(templname, mask);
+		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Globbing merge: %s %s\n", instname, templname);
 
-		if(shadow_call_replace_name(0, full_templ_glob_path, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU) == SUCCESS && Z_TYPE_P(return_value) == IS_ARRAY) {
-			ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(return_value), src_entry) { // Use Z_ARRVAL_P for direct zval
+		/* call with template */
+		if(shadow_call_replace_name(0, templname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU) == SUCCESS && Z_TYPE_P(return_value) == IS_ARRAY) {
+			/* cut off instname and put path part there */
+			ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(return_value), src_entry) {
 				char *mergepath;
-				if (Z_TYPE_P(src_entry) != IS_STRING) continue;
-
-				const char *result_entry_path = Z_STRVAL_P(src_entry);
-				char *relative_to_glob_base = (char*)result_entry_path + templ_base_len;
-				if (templ_base_len > 0 && IS_SLASH(*relative_to_glob_base)) {
-					relative_to_glob_base++;
-				}
-
-				int prefix_len = strlen(original_path_prefix);
-				if (prefix_len > 0 && IS_SLASH(original_path_prefix[prefix_len-1])) {
-					spprintf(&mergepath, 0, "%s%s", original_path_prefix, relative_to_glob_base);
-				} else if (prefix_len > 0) {
-					spprintf(&mergepath, 0, "%s/%s", original_path_prefix, relative_to_glob_base);
-				} else {
-					mergepath = estrdup(relative_to_glob_base);
-				}
-				if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: Template merge: result_entry_path='%s', relative_to_glob_base='%s', mergepath='%s'\n", result_entry_path, relative_to_glob_base, mergepath);
+				if (Z_TYPE_P(src_entry) != IS_STRING) continue; /* weird, glob shouldn't do that to us */
+				spprintf(&mergepath, MAXPATHLEN, "%s/%s", path, Z_STRVAL_P(src_entry)+templen+1);
 				zend_hash_str_add_new_ptr(mergedata, mergepath, strlen(mergepath), dummy);
 				efree(mergepath);
 			} ZEND_HASH_FOREACH_END();
+		} else {
+			/* ignore problems here - other one may pick it up */
+			array_init(return_value);
 		}
-		// End of processing template results from return_value. Data is now in mergedata.
+	} else {
+		/* we're skipping the template */
+		array_init(return_value);
 	}
 
-	// 6. Perform glob on instance path
-	// Prepare return_value for the next orig_glob call
-	zval_dtor(return_value);
-	array_init(return_value);
-
-	if(shadow_call_replace_name(0, full_inst_glob_path, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU) == SUCCESS && Z_TYPE_P(return_value) == IS_ARRAY) {
-		ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(return_value), src_entry) { // Use Z_ARRVAL_P
+	/* replace the return value */
+	templdata = *return_value;
+	return_value = &instdata;
+	/* call with instance */
+	if(shadow_call_replace_name(0, instname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU) == SUCCESS && Z_TYPE_P(return_value) == IS_ARRAY) {
+		/* merge data */
+		ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(return_value), src_entry) {
 			char *mergepath;
-			if (Z_TYPE_P(src_entry) != IS_STRING) continue;
-
-			const char *result_entry_path = Z_STRVAL_P(src_entry);
-			char *relative_to_glob_base = (char*)result_entry_path + inst_base_len;
-			if (inst_base_len > 0 && IS_SLASH(*relative_to_glob_base)) {
-				relative_to_glob_base++;
-			}
-
-			int prefix_len = strlen(original_path_prefix);
-			if (prefix_len > 0 && IS_SLASH(original_path_prefix[prefix_len-1])) {
-				spprintf(&mergepath, 0, "%s%s", original_path_prefix, relative_to_glob_base);
-			} else if (prefix_len > 0) {
-				spprintf(&mergepath, 0, "%s/%s", original_path_prefix, relative_to_glob_base);
-			} else {
-				mergepath = estrdup(relative_to_glob_base);
-			}
-				if (SHADOW_G(debug) & SHADOW_DEBUG_GLOB) fprintf(stderr, "GLOB_DEBUG: Instance merge: result_entry_path='%s', relative_to_glob_base='%s', mergepath='%s'\n", result_entry_path, relative_to_glob_base, mergepath);
-			zend_hash_str_update_ptr(mergedata, mergepath, strlen(mergepath), dummy);
+			if (Z_TYPE_P(src_entry) != IS_STRING) continue; /* weird, glob shouldn't do that to us */
+			spprintf(&mergepath, MAXPATHLEN, "%s/%s", path, Z_STRVAL_P(src_entry)+instlen+1);
+			zend_hash_str_add_ptr(mergedata, mergepath, strlen(mergepath), dummy);
 			efree(mergepath);
 		} ZEND_HASH_FOREACH_END();
 	}
-	// End of processing instance results from return_value. Data is now combined in mergedata.
-
-	// 7. Populate the final return_value from mergedata
-	zval_dtor(return_value); // Clear return_value (which holds results from last orig_glob)
-	array_init(return_value); // Initialize the actual return_value for the user
-	zend_string *final_path_str;
-	ZEND_HASH_FOREACH_STR_KEY(mergedata, final_path_str) {
-		if (final_path_str) {
-			add_next_index_str(return_value, zend_string_copy(final_path_str));
-		}
+	zval_dtor(return_value);
+	return_value = &templdata;
+	/* convert mergedata to return */
+	zend_hash_clean(Z_ARRVAL_P(return_value));
+	zend_string *filename_zs;
+	ZEND_HASH_FOREACH_STR_KEY(mergedata, filename_zs) {
+		add_next_index_str(return_value, zend_string_copy(filename_zs));
 	} ZEND_HASH_FOREACH_END();
-
-	// 8. Cleanup
+	/* cleanup */
+	zend_hash_clean(mergedata);
 	zend_hash_destroy(mergedata);
-	FREE_HASHTABLE(mergedata);
-
-	cleanup_paths:
-	if (inst_base_path) efree(inst_base_path);
-	if (templ_base_path) efree(templ_base_path);
-	if (abs_path_base) efree(abs_path_base);
-	if (original_path_prefix) efree(original_path_prefix);
-	if (glob_pattern_itself) efree(glob_pattern_itself);
-	// full_inst_glob_path and full_templ_glob_path are freed by shadow_call_replace_name
-	return;
-
-	cleanup_and_return_empty:
-		if (inst_base_path) efree(inst_base_path);
-		if (templ_base_path) efree(templ_base_path);
-		if (abs_path_base) efree(abs_path_base);
-		if (original_path_prefix) efree(original_path_prefix);
-		if (glob_pattern_itself) efree(glob_pattern_itself);
-		array_init(return_value);
+	efree(mergedata);
+	efree(path);
 }
 /* }}} */
 

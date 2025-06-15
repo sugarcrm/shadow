@@ -40,3 +40,33 @@ RUN cd ${PHP_BUILD_DIR}/shadow && \
 # Run tests for the PHP extension
 RUN cd ${PHP_BUILD_DIR}/shadow && \
     php run-tests.php --show-diff .
+
+# Create a directory for the iterator test script
+RUN mkdir -p ${PHP_BUILD_DIR}/shadow/test_iterator
+
+# Create the iterator test script
+RUN cat <<'EOF' > ${PHP_BUILD_DIR}/shadow/test_iterator/test.php
+<?php
+// Create a dummy directory structure
+mkdir('test_dir');
+mkdir('test_dir/subdir1');
+touch('test_dir/file1.txt');
+touch('test_dir/subdir1/file2.txt');
+
+$iterator = new RecursiveDirectoryIterator('test_dir', RecursiveDirectoryIterator::SKIP_DOTS);
+$recursiveIterator = new RecursiveIteratorIterator($iterator, RecursiveIteratorIterator::SELF_FIRST);
+
+foreach ($recursiveIterator as $fileInfo) {
+    echo $fileInfo->getPathname() . PHP_EOL;
+}
+
+// Clean up the dummy directory structure
+unlink('test_dir/subdir1/file2.txt');
+rmdir('test_dir/subdir1');
+unlink('test_dir/file1.txt');
+rmdir('test_dir');
+?>
+EOF
+
+# Run the iterator test script
+RUN cd ${PHP_BUILD_DIR}/shadow/test_iterator && php test.php

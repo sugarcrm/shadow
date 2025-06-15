@@ -1,0 +1,538 @@
+Resolve: /app/tests/fixtures/templatedir -> /app/tests/fixtures/templatedir
+Resolve: /app/tests/fixtures/instance -> /app/tests/fixtures/instance
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir', options: 2 (CHK_EX=N, RET_INST=N)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir (len 31)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir' is outside template/instance or does not meet criteria.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir', returning 'NULL (use original)'
+Realpath /app/tests/fixtures/templatedir ((null))
+T2I_REFACTOR: ENTER '/app/tests/fixtures/instance', options: 2 (CHK_EX=N, RET_INST=N)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance (len 28)
+T2I_REFACTOR: Path '/app/tests/fixtures/instance' is outside template/instance or does not meet criteria.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/instance', returning 'NULL (use original)'
+Realpath /app/tests/fixtures/instance ((null))
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/api, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/api' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/api', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/api (len 35)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/api' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/api', returning '/app/tests/fixtures/instance/api'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/api (original URL: /app/tests/fixtures/templatedir/api)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/api': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/api, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/api, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/api', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/api (len 35)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/api' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/api' => '/app/tests/fixtures/instance/api'
+Opendir: /app/tests/fixtures/templatedir/api (/app/tests/fixtures/instance/api)
+Opening templdir: /app/tests/fixtures/templatedir/api
+shadow_dir_opener: Adding from TEMPLATE to mergedata: rest.php
+shadow_dir_opener: Adding from TEMPLATE to mergedata: ..
+shadow_dir_opener: Adding from TEMPLATE to mergedata: .
+shadow_dir_opener: Adding/Updating from INSTANCE to mergedata: rest.php
+shadow_dir_opener: Adding/Updating from INSTANCE to mergedata: ..
+shadow_dir_opener: Adding/Updating from INSTANCE to mergedata: .
+shadow_dirstream_read: Attempting to read entry: rest.php
+shadow_dirstream_read: Copied to dirent: rest.php
+shadow_dirstream_read: Attempting to read entry: rest.php
+shadow_dirstream_read: Copied to dirent: rest.php
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/api/rest.php, Flags: 7
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/api/rest.php' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/api/rest.php', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/api/rest.php (len 44)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/api/rest.php' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/api/rest.php', returning '/app/tests/fixtures/instance/api/rest.php'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/api/rest.php (original URL: /app/tests/fixtures/templatedir/api/rest.php)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/api/rest.php': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0100644 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': File
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/api/rest.php, Result: 0
+shadow_dirstream_read: Attempting to read entry: ..
+shadow_dirstream_read: Copied to dirent: ..
+shadow_dirstream_read: Attempting to read entry: .
+shadow_dirstream_read: Copied to dirent: .
+shadow_dirstream_read: Attempting to read entry (non-string key or end of hash)
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe (len 35)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe', returning '/app/tests/fixtures/instance/qwe'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe (original URL: /app/tests/fixtures/templatedir/qwe)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe (len 35)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe' => '/app/tests/fixtures/instance/qwe'
+Opendir: /app/tests/fixtures/templatedir/qwe (/app/tests/fixtures/instance/qwe)
+Opening templdir: /app/tests/fixtures/templatedir/qwe
+shadow_dir_opener: Adding from TEMPLATE to mergedata: template_qwe_file.txt
+shadow_dir_opener: Adding from TEMPLATE to mergedata: ..
+shadow_dir_opener: Adding from TEMPLATE to mergedata: .
+shadow_dir_opener: Adding/Updating from INSTANCE to mergedata: modulebuilder
+shadow_dir_opener: Adding/Updating from INSTANCE to mergedata: ..
+shadow_dir_opener: Adding/Updating from INSTANCE to mergedata: .
+shadow_dirstream_read: Attempting to read entry: template_qwe_file.txt
+shadow_dirstream_read: Copied to dirent: template_qwe_file.txt
+shadow_dirstream_read: Attempting to read entry: template_qwe_file.txt
+shadow_dirstream_read: Copied to dirent: template_qwe_file.txt
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/template_qwe_file.txt, Flags: 7
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/template_qwe_file.txt' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/template_qwe_file.txt', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/template_qwe_file.txt (len 57)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/template_qwe_file.txt' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/template_qwe_file.txt', returning 'NULL (use original)'
+shadow_stat: Resolved Instance Name: NULL (original URL: /app/tests/fixtures/templatedir/qwe/template_qwe_file.txt)
+shadow_stat: Stat on ORIGINAL '/app/tests/fixtures/templatedir/qwe/template_qwe_file.txt': Result: 0
+shadow_stat: SUCCESS for '/app/tests/fixtures/templatedir/qwe/template_qwe_file.txt': Mode: 0100644 (octal), UID: 1001, GID: 0
+shadow_stat: Type for '/app/tests/fixtures/templatedir/qwe/template_qwe_file.txt': File
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/template_qwe_file.txt, Result: 0
+shadow_dirstream_read: Attempting to read entry: ..
+shadow_dirstream_read: Copied to dirent: ..
+shadow_dirstream_read: Attempting to read entry: .
+shadow_dirstream_read: Copied to dirent: .
+shadow_dirstream_read: Attempting to read entry: modulebuilder
+shadow_dirstream_read: Copied to dirent: modulebuilder
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder, Flags: 7
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder (len 49)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder', returning '/app/tests/fixtures/instance/qwe/modulebuilder'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder (len 49)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder' => '/app/tests/fixtures/instance/qwe/modulebuilder'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder (/app/tests/fixtures/instance/qwe/modulebuilder)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds (len 56)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds (len 56)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds' => '/app/tests/fixtures/instance/qwe/modulebuilder/builds'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds (/app/tests/fixtures/instance/qwe/modulebuilder/builds)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe (len 63)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe (len 63)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe' => '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules (len 76)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules (len 76)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules' => '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules (len 84)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules (len 84)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules' => '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings (len 93)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings (len 93)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings' => '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases (len 90)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases (len 90)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases' => '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes (len 90)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes (len 90)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes' => '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers (len 98)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers (len 98)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers' => '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project (len 92)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project (len 92)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project' => '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts (len 93)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts (len 93)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts' => '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls (len 90)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls (len 90)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls' => '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php (len 99)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0100644 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': File
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php, Result: 0
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems (len 103)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems (len 103)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems' => '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages (len 93)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages (len 93)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages' => '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents (len 94)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents (len 94)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents' => '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts (len 93)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts (len 93)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts' => '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php (len 105)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0100644 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': File
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php, Result: 0
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks (len 90)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks', returning '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks (original URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks (len 90)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks' => '/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks'
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks
+shadow_dirstream_read: Attempting to read entry (non-string key or end of hash)
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/conflict, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/conflict' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/conflict', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/conflict (len 40)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/conflict' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/conflict', returning '/app/tests/fixtures/instance/conflict'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/conflict (original URL: /app/tests/fixtures/templatedir/conflict)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/conflict': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/conflict, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/conflict, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/conflict', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/conflict (len 40)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/conflict' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/conflict' => '/app/tests/fixtures/instance/conflict'
+Opendir: /app/tests/fixtures/templatedir/conflict (/app/tests/fixtures/instance/conflict)
+Opening templdir: /app/tests/fixtures/templatedir/conflict
+shadow_dir_opener: Adding from TEMPLATE to mergedata: item
+shadow_dir_opener: Adding from TEMPLATE to mergedata: ..
+shadow_dir_opener: Adding from TEMPLATE to mergedata: .
+shadow_dir_opener: Adding/Updating from INSTANCE to mergedata: item
+shadow_dir_opener: Adding/Updating from INSTANCE to mergedata: ..
+shadow_dir_opener: Adding/Updating from INSTANCE to mergedata: .
+shadow_dirstream_read: Attempting to read entry: item
+shadow_dirstream_read: Copied to dirent: item
+shadow_dirstream_read: Attempting to read entry: item
+shadow_dirstream_read: Copied to dirent: item
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/conflict/item, Flags: 7
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/conflict/item' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/conflict/item', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/conflict/item (len 45)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/conflict/item' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/conflict/item', returning '/app/tests/fixtures/instance/conflict/item'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/conflict/item (original URL: /app/tests/fixtures/templatedir/conflict/item)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/conflict/item': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/conflict/item, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/conflict/item, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/conflict/item', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/conflict/item (len 45)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/conflict/item' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/conflict/item' => '/app/tests/fixtures/instance/conflict/item'
+Opendir: /app/tests/fixtures/templatedir/conflict/item (/app/tests/fixtures/instance/conflict/item)
+Opening templdir: /app/tests/fixtures/templatedir/conflict/item
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/conflict/item/somefile.txt, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/conflict/item/somefile.txt' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/conflict/item/somefile.txt', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Initial get_full_path failed for '/app/tests/fixtures/templatedir/conflict/item/somefile.txt'. Attempting segmented resolution.
+T2I_REFACTOR: Segmented resolution resulted in realpath: '/app/tests/fixtures/instance/conflict/item/somefile.txt'
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/conflict/item/somefile.txt (len 55)
+T2I_REFACTOR: Path '/app/tests/fixtures/instance/conflict/item/somefile.txt' is in INSTANCE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/conflict/item/somefile.txt', returning '/app/tests/fixtures/instance/conflict/item/somefile.txt'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/conflict/item/somefile.txt (original URL: /app/tests/fixtures/templatedir/conflict/item/somefile.txt)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/conflict/item/somefile.txt': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0100644 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': File
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/conflict/item/somefile.txt, Result: 0
+shadow_dirstream_read: Attempting to read entry: ..
+shadow_dirstream_read: Copied to dirent: ..
+shadow_dirstream_read: Attempting to read entry: .
+shadow_dirstream_read: Copied to dirent: .
+shadow_dirstream_read: Attempting to read entry (non-string key or end of hash)
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/conflict2, Flags: 6
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/conflict2' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/conflict2', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/conflict2 (len 41)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/conflict2' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/conflict2', returning '/app/tests/fixtures/instance/conflict2'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/conflict2 (original URL: /app/tests/fixtures/templatedir/conflict2)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/conflict2': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0040755 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': Directory
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/conflict2, Result: 0
+shadow_dir_opener: ENTER Path: /app/tests/fixtures/templatedir/conflict2, Mode: r
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/conflict2', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/conflict2 (len 41)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/conflict2' is in TEMPLATE territory.
+T2I_REFACTOR: Cache hit for '/app/tests/fixtures/templatedir/conflict2' => '/app/tests/fixtures/instance/conflict2'
+Opendir: /app/tests/fixtures/templatedir/conflict2 (/app/tests/fixtures/instance/conflict2)
+Opening templdir: /app/tests/fixtures/templatedir/conflict2
+shadow_dir_opener: Adding from TEMPLATE to mergedata: item
+shadow_dir_opener: Adding from TEMPLATE to mergedata: ..
+shadow_dir_opener: Adding from TEMPLATE to mergedata: .
+shadow_dir_opener: Adding/Updating from INSTANCE to mergedata: item
+shadow_dir_opener: Adding/Updating from INSTANCE to mergedata: ..
+shadow_dir_opener: Adding/Updating from INSTANCE to mergedata: .
+shadow_dirstream_read: Attempting to read entry: item
+shadow_dirstream_read: Copied to dirent: item
+shadow_dirstream_read: Attempting to read entry: item
+shadow_dirstream_read: Copied to dirent: item
+shadow_stat: ENTER URL: /app/tests/fixtures/templatedir/conflict2/item, Flags: 7
+STAT_DEBUG: Values: OCE=1, ORI=4, Combo=5. About to call t2i for '/app/tests/fixtures/templatedir/conflict2/item' with options: 5
+T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/conflict2/item', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/conflict2/item (len 46)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/conflict2/item' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/conflict2/item', returning '/app/tests/fixtures/instance/conflict2/item'
+shadow_stat: Resolved Instance Name: /app/tests/fixtures/instance/conflict2/item (original URL: /app/tests/fixtures/templatedir/conflict2/item)
+shadow_stat: Stat on INSTANCE '/app/tests/fixtures/instance/conflict2/item': Result: 0
+shadow_stat: SUCCESS for 'used_instance_path_potentially_freed': Mode: 0100644 (octal), UID: 1001, GID: 0
+shadow_stat: Type for 'used_instance_path_potentially_freed': File
+shadow_stat: EXIT URL: /app/tests/fixtures/templatedir/conflict2/item, Result: 0
+shadow_dirstream_read: Attempting to read entry: ..
+shadow_dirstream_read: Copied to dirent: ..
+shadow_dirstream_read: Attempting to read entry: .
+shadow_dirstream_read: Copied to dirent: .
+shadow_dirstream_read: Attempting to read entry (non-string key or end of hash)

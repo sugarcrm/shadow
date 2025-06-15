@@ -1,0 +1,45 @@
+Resolve: setup.inc -> /app/tests/setup.inc
+Resolve: /app/tests/setup.inc -> /app/tests/setup.inc
+Resolve: /app/tests/fixtures/templatedir -> /app/tests/fixtures/templatedir
+Resolve: /app/tests/fixtures/instance -> /app/tests/fixtures/instance
+T2I_REFACTOR: ENTER 'txt', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/txt (len 35)
+T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/txt' is in TEMPLATE territory.
+T2I_REFACTOR: EXIT for 'txt', returning '/app/tests/fixtures/instance/txt'
+Glob: txt/*.txt => txt (/app/tests/fixtures/instance/txt)
+Globbing merge: /app/tests/fixtures/instance/txt/*.txt /app/tests/fixtures/templatedir/txt/*.txt
+T2I_REFACTOR: ENTER 'txt', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/txt (len 32)
+T2I_REFACTOR: Path '/app/tests/fixtures/instance/txt' is in INSTANCE territory.
+T2I_REFACTOR: EXIT for 'txt', returning '/app/tests/fixtures/instance/txt'
+Glob: txt/*.txt => txt (/app/tests/fixtures/instance/txt)
+Globbing merge: /app/tests/fixtures/instance/txt/*.txt /app/tests/fixtures/templatedir/txt/*.txt
+T2I_REFACTOR: ENTER 'templdir', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/templdir (len 37)
+T2I_REFACTOR: Path '/app/tests/fixtures/instance/templdir' is in INSTANCE territory.
+T2I_REFACTOR: EXIT for 'templdir', returning '/app/tests/fixtures/templatedir/templdir'
+Glob: templdir/* => templdir (/app/tests/fixtures/templatedir/templdir)
+Globbing merge: /app/tests/fixtures/templatedir/templdir/* /app/tests/fixtures/templatedir/templdir/*
+T2I_REFACTOR: ENTER 'instdir', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/instdir (len 36)
+T2I_REFACTOR: Path '/app/tests/fixtures/instance/instdir' is in INSTANCE territory.
+T2I_REFACTOR: EXIT for 'instdir', returning '/app/tests/fixtures/instance/instdir'
+Glob: instdir/* => instdir (/app/tests/fixtures/instance/instdir)
+Globbing merge: /app/tests/fixtures/instance/instdir/* /app/tests/fixtures/templatedir/instdir/*
+T2I_REFACTOR: ENTER 'cache', options: 0 (CHK_EX=N, RET_INST=N)
+T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/cache (len 34)
+T2I_REFACTOR: Path '/app/tests/fixtures/instance/cache' is in INSTANCE territory.
+T2I_REFACTOR: EXIT for 'cache', returning '/app/tests/fixtures/instance/cache'
+Glob instance only: cache (/app/tests/fixtures/instance/cache)
+T2I_REFACTOR: ENTER '', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: No valid realpath found for ''.
+Glob: * =>  ((null))
+Globbing template: *
+T2I_REFACTOR: ENTER '', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: No valid realpath found for ''.
+Glob: ** =>  ((null))
+Globbing template: **
+T2I_REFACTOR: ENTER '', options: 5 (CHK_EX=Y, RET_INST=Y)
+T2I_REFACTOR: No valid realpath found for ''.
+Glob: * =>  ((null))
+Globbing template: *

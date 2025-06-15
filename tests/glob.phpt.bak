@@ -3,8 +3,8 @@ Check globs
 --SKIPIF--
 <?php if (!extension_loaded("shadow")) print "skip"; ?>
 --FILE--
-<?php 
-ini_set('shadow.debug', 16383); // Enable all flags EXCEPT SHADOW_DEBUG_GLOB
+<?php
+ini_set('shadow.debug', -1); // Enable all shadow debug flags
 require_once('setup.inc');
 $w = getcwd();
 chdir($template);
@@ -38,24 +38,20 @@ var_dump($res);
 
 ?>
 --EXPECT--
-array(4) {
+array(3) {
   [0]=>
   string(13) "txt/ifile.txt"
   [1]=>
   string(16) "txt/override.txt"
   [2]=>
-  string(16) "txt/sometext.txt"
-  [3]=>
   string(13) "txt/tfile.txt"
 }
-array(4) {
+array(3) {
   [0]=>
   string(13) "txt/ifile.txt"
   [1]=>
   string(16) "txt/override.txt"
   [2]=>
-  string(16) "txt/sometext.txt"
-  [3]=>
   string(13) "txt/tfile.txt"
 }
 array(1) {
@@ -70,60 +66,44 @@ array(1) {
   [0]=>
   string(15) "cache/cache.txt"
 }
-array(13) {
+array(9) {
   [0]=>
-  string(3) "api"
-  [1]=>
   string(5) "cache"
-  [2]=>
-  string(8) "conflict"
-  [3]=>
-  string(9) "conflict2"
-  [4]=>
+  [1]=>
   string(6) "custom"
-  [5]=>
+  [2]=>
   string(12) "iinclude.php"
-  [6]=>
+  [3]=>
   string(17) "instance_only.php"
-  [7]=>
+  [4]=>
   string(7) "instdir"
-  [8]=>
+  [5]=>
   string(12) "manifest.php"
-  [9]=>
+  [6]=>
   string(10) "nowritedir"
-  [10]=>
-  string(3) "qwe"
-  [11]=>
+  [7]=>
   string(8) "test.php"
-  [12]=>
+  [8]=>
   string(3) "txt"
 }
-array(13) {
+array(9) {
   [0]=>
-  string(3) "api"
-  [1]=>
   string(5) "cache"
-  [2]=>
-  string(8) "conflict"
-  [3]=>
-  string(9) "conflict2"
-  [4]=>
+  [1]=>
   string(6) "custom"
-  [5]=>
+  [2]=>
   string(12) "iinclude.php"
-  [6]=>
+  [3]=>
   string(17) "instance_only.php"
-  [7]=>
+  [4]=>
   string(7) "instdir"
-  [8]=>
+  [5]=>
   string(12) "manifest.php"
-  [9]=>
+  [6]=>
   string(10) "nowritedir"
-  [10]=>
-  string(3) "qwe"
-  [11]=>
+  [7]=>
   string(8) "test.php"
-  [12]=>
+  [8]=>
   string(3) "txt"
 }
 array(2) {

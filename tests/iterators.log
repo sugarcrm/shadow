@@ -1,0 +1,287 @@
+
+---- EXPECTED OUTPUT
+This will be filled once we see the actual output.
+---- ACTUAL OUTPUT
+Resolve: /app/tests/fixtures/templatedir -> /app/tests/fixtures/templatedir
+Resolve: /app/tests/fixtures/instance -> /app/tests/fixtures/instance
+Shadow paths set: Template='/app/tests/fixtures/templatedir', Instance='/app/tests/fixtures/instance'
+Full path: /app/tests/fixtures/templatedir
+Path check: /app/tests/fixtures/templatedir => (null)
+Realpath /app/tests/fixtures/templatedir ((null))
+Template Path (realpath): /app/tests/fixtures/templatedir
+Full path: /app/tests/fixtures/instance
+Path check: /app/tests/fixtures/instance => (null)
+Realpath /app/tests/fixtures/instance ((null))
+Instance Path (realpath): /app/tests/fixtures/instance
+
+Iterating directory (original): /app/tests/fixtures/templatedir/api
+Attempting to iterate: /app/tests/fixtures/templatedir/api
+Full path: /app/tests/fixtures/templatedir/api
+In template: /app/tests/fixtures/templatedir/api
+Path check: /app/tests/fixtures/templatedir/api => /app/tests/fixtures/instance/api
+Opendir: /app/tests/fixtures/templatedir/api (/app/tests/fixtures/instance/api)
+Opening templdir: /app/tests/fixtures/templatedir/api
+shadow_stat: URL: /app/tests/fixtures/templatedir/api/rest.php, Instance Name (early): NULL, Flags: 7
+shadow_stat: Stat result before actual call (early), res: -1, errno: 0 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/api/rest.php
+In template: /app/tests/fixtures/templatedir/api/rest.php
+Path check: /app/tests/fixtures/templatedir/api/rest.php => /app/tests/fixtures/instance/api/rest.php
+Stat: /app/tests/fixtures/templatedir/api/rest.php (/app/tests/fixtures/instance/api/rest.php) 7
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/api/rest.php (isDir: No, isFile: Yes)
+Found 1 items in /app/tests/fixtures/templatedir/api
+
+Iterating directory (original): /app/tests/fixtures/templatedir/qwe
+Attempting to iterate: /app/tests/fixtures/templatedir/qwe
+Full path: /app/tests/fixtures/templatedir/qwe
+In template: /app/tests/fixtures/templatedir/qwe
+Path check: /app/tests/fixtures/templatedir/qwe => /app/tests/fixtures/instance/qwe
+Opendir: /app/tests/fixtures/templatedir/qwe (/app/tests/fixtures/instance/qwe)
+Opening templdir: /app/tests/fixtures/templatedir/qwe
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/template_qwe_file.txt, Instance Name (early): NULL, Flags: 7
+shadow_stat: Stat result before actual call (early), res: -1, errno: 0 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/template_qwe_file.txt
+In template: /app/tests/fixtures/templatedir/qwe/template_qwe_file.txt
+Path check: /app/tests/fixtures/templatedir/qwe/template_qwe_file.txt => (null)
+Stat: /app/tests/fixtures/templatedir/qwe/template_qwe_file.txt ((null)) 7
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/template_qwe_file.txt (isDir: No, isFile: Yes)
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder, Instance Name (early): NULL, Flags: 7
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder => /app/tests/fixtures/instance/qwe/modulebuilder
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder (/app/tests/fixtures/instance/qwe/modulebuilder) 7
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder => /app/tests/fixtures/instance/qwe/modulebuilder
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder (/app/tests/fixtures/instance/qwe/modulebuilder)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds => /app/tests/fixtures/instance/qwe/modulebuilder/builds
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds (/app/tests/fixtures/instance/qwe/modulebuilder/builds) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds => /app/tests/fixtures/instance/qwe/modulebuilder/builds
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds (/app/tests/fixtures/instance/qwe/modulebuilder/builds)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/Call.php (isDir: No, isFile: Yes)
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php (isDir: No, isFile: Yes)
+shadow_stat: URL: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks, Instance Name (early): NULL, Flags: 6
+shadow_stat: Stat result before actual call (early), res: -1, errno: 2 (errno here is pre-stat call)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks
+Path check: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks
+Stat: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks) 6
+Stat res: 0
+Item: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks (isDir: Yes, isFile: No)
+Full path: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks
+In template: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks
+Path check from cache: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks => /app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks
+Opendir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks (/app/tests/fixtures/instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks)
+Opening templdir: /app/tests/fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks
+Found 20 items in /app/tests/fixtures/templatedir/qwe
+---- FAILED

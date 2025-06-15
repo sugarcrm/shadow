@@ -1,0 +1,80 @@
+001+ Resolve: setup.inc -> /app/tests/setup.inc
+002+ Resolve: /app/tests/setup.inc -> /app/tests/setup.inc
+003+ Resolve: /app/tests/fixtures/templatedir -> /app/tests/fixtures/templatedir
+004+ Resolve: /app/tests/fixtures/instance -> /app/tests/fixtures/instance
+005+ T2I_REFACTOR: ENTER '/app/tests/fixtures/templatedir/txt', options: 5 (CHK_EX=Y, RET_INST=Y)
+006+ T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/templatedir/txt (len 35)
+007+ T2I_REFACTOR: Path '/app/tests/fixtures/templatedir/txt' is in TEMPLATE territory.
+008+ T2I_REFACTOR: EXIT for '/app/tests/fixtures/templatedir/txt', returning '/app/tests/fixtures/instance/txt'
+     array(4) {
+       [0]=>
+       string(13) "txt/ifile.txt"
+--
+       [3]=>
+       string(13) "txt/tfile.txt"
+     }
+019+ T2I_REFACTOR: ENTER '/app/tests/fixtures/instance/txt', options: 5 (CHK_EX=Y, RET_INST=Y)
+020+ T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/txt (len 32)
+021+ T2I_REFACTOR: Path '/app/tests/fixtures/instance/txt' is in INSTANCE territory.
+022+ T2I_REFACTOR: EXIT for '/app/tests/fixtures/instance/txt', returning '/app/tests/fixtures/instance/txt'
+     array(4) {
+       [0]=>
+       string(13) "txt/ifile.txt"
+--
+       [3]=>
+       string(13) "txt/tfile.txt"
+     }
+033+ T2I_REFACTOR: ENTER '/app/tests/fixtures/instance/templdir', options: 5 (CHK_EX=Y, RET_INST=Y)
+034+ T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/templdir (len 37)
+035+ T2I_REFACTOR: Path '/app/tests/fixtures/instance/templdir' is in INSTANCE territory.
+036+ T2I_REFACTOR: EXIT for '/app/tests/fixtures/instance/templdir', returning '/app/tests/fixtures/templatedir/templdir'
+     array(1) {
+       [0]=>
+       string(14) "templdir/t.txt"
+     }
+041+ T2I_REFACTOR: ENTER '/app/tests/fixtures/instance/instdir', options: 5 (CHK_EX=Y, RET_INST=Y)
+042+ T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/instdir (len 36)
+043+ T2I_REFACTOR: Path '/app/tests/fixtures/instance/instdir' is in INSTANCE territory.
+044+ T2I_REFACTOR: EXIT for '/app/tests/fixtures/instance/instdir', returning '/app/tests/fixtures/instance/instdir'
+     array(1) {
+       [0]=>
+       string(13) "instdir/t.txt"
+     }
+049+ T2I_REFACTOR: ENTER '/app/tests/fixtures/instance/cache', options: 4 (CHK_EX=N, RET_INST=Y)
+050+ T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance/cache (len 34)
+051+ T2I_REFACTOR: Path '/app/tests/fixtures/instance/cache' is in INSTANCE territory.
+052+ T2I_REFACTOR: EXIT for '/app/tests/fixtures/instance/cache', returning '/app/tests/fixtures/instance/cache'
+     array(1) {
+       [0]=>
+       string(15) "cache/cache.txt"
+     }
+057+ T2I_REFACTOR: ENTER '/app/tests/fixtures/instance', options: 5 (CHK_EX=Y, RET_INST=Y)
+058+ T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance (len 28)
+059+ T2I_REFACTOR: Path '/app/tests/fixtures/instance' IS the instance directory itself.
+060+ T2I_REFACTOR: EXIT for '/app/tests/fixtures/instance', returning '/app/tests/fixtures/instance'
+     array(13) {
+       [0]=>
+       string(3) "api"
+--
+       [12]=>
+       string(3) "txt"
+     }
+089+ T2I_REFACTOR: ENTER '/app/tests/fixtures/instance', options: 5 (CHK_EX=Y, RET_INST=Y)
+090+ T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures/instance (len 28)
+091+ T2I_REFACTOR: Path '/app/tests/fixtures/instance' IS the instance directory itself.
+092+ T2I_REFACTOR: EXIT for '/app/tests/fixtures/instance', returning '/app/tests/fixtures/instance'
+     array(13) {
+       [0]=>
+       string(3) "api"
+--
+       [12]=>
+       string(3) "txt"
+     }
+121+ T2I_REFACTOR: ENTER '/app/tests/fixtures', options: 5 (CHK_EX=Y, RET_INST=Y)
+122+ T2I_REFACTOR: Final realpath for checks: /app/tests/fixtures (len 19)
+123+ T2I_REFACTOR: Path '/app/tests/fixtures' is outside template/instance or does not meet criteria.
+124+ T2I_REFACTOR: EXIT for '/app/tests/fixtures', returning 'NULL (use original)'
+     array(2) {
+       [0]=>
+       string(8) "instance"
+--

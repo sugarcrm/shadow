@@ -1,0 +1,13 @@
+--TEST--
+Check overrides
+--EXTENSIONS--
+gd
+fileinfo
+--DESCRIPTION--
+To test it locally if you have shared gd extension you'll need:
+export TEST_PHP_ARGS="-d extension=$(php-config --extension-dir)/gd.so"
+--INI--
+shadow.override=imagepng@w1
+--SKIPIF--
+skip--FILE--
+text/plain

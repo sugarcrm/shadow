@@ -1,0 +1,4 @@
+PHP Fatal error:  Uncaught Error: Call to undefined function imagecreate() in /app/tests/override.phpt:23
+Stack trace:
+#0 {main}
+  thrown in /app/tests/override.phpt on line 23

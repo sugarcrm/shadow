@@ -1,0 +1,34 @@
+--TEST--
+User-provided iterator test case
+--SKIPIF--
+--FILE--
+Shadow paths set: Template='/app/tests/user_fixtures/templatedir', Instance='/app/tests/user_fixtures/instance'
+Template Path (realpath): /app/tests/user_fixtures/templatedir
+Instance Path (realpath): /app/tests/user_fixtures/instance
+
+Iterating directory (original path given to iterator): /app/tests/user_fixtures/templatedir/qwe
+Found 18 items in /app/tests/user_fixtures/templatedir/qwe:
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder (Type: Dir, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds (Type: Dir, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds/qweqwe (Type: Dir, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules (Type: Dir, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules (Type: Dir, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts (Type: Dir, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/Account.php (Type: File, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls (Type: Dir, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases (Type: Dir, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts (Type: Dir, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents (Type: Dir, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers (Type: Dir, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings (Type: Dir, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages (Type: Dir, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes (Type: Dir, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project (Type: Dir, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems (Type: Dir, isLink: No)
+Item: /app/tests/user_fixtures/templatedir/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks (Type: Dir, isLink: No)
+
+Iterating directory (original path given to iterator): /app/tests/user_fixtures/templatedir/api
+Found 1 items in /app/tests/user_fixtures/templatedir/api:
+Item: /app/tests/user_fixtures/templatedir/api/rest.php (Type: File, isLink: No)
+--EXPECTF--
+This will be filled after observing the output.
