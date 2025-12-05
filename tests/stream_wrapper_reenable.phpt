@@ -15,6 +15,9 @@ stream_wrapper_restore('file');
 shadow($template, $instance, array("cache", "custom", "custom/some/long/directory/name"), true) || die("failed to setup shadow");
 
 echo file_get_contents("$instance/txt/override.txt");
+
+// Restore the file immediately for subsequent test runs
+file_put_contents("$instance/txt/override.txt", "Instance data\n");
 ?>
 --EXPECT--
 Instance data

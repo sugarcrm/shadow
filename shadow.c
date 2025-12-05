@@ -1432,6 +1432,29 @@ static void shadow_is_writable(INTERNAL_FUNCTION_PARAMETERS)
 }
 /* }}} */
 
+/* Helper function to add glob results to merge hash table */
+static void shadow_glob_add_to_hash(HashTable *mergedata, zval *glob_results, const char *path, int pathlen, void *dummy, int add_new)
+{
+	zval *src_entry;
+	ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(glob_results), src_entry) {
+		zend_string *mergepath_zs;
+		char *relpath;
+		if (Z_TYPE_P(src_entry) != IS_STRING) continue;
+		relpath = Z_STRVAL_P(src_entry) + pathlen + 1;
+		if (path && path[0] != '\0') {
+			mergepath_zs = strpprintf(MAXPATHLEN, "%s/%s", path, relpath);
+		} else {
+			mergepath_zs = zend_string_init(relpath, strlen(relpath), 0);
+		}
+		if (add_new) {
+			zend_hash_str_add_new_ptr(mergedata, ZSTR_VAL(mergepath_zs), ZSTR_LEN(mergepath_zs), dummy);
+		} else {
+			zend_hash_str_add_ptr(mergedata, ZSTR_VAL(mergepath_zs), ZSTR_LEN(mergepath_zs), dummy);
+		}
+		zend_string_release(mergepath_zs);
+	} ZEND_HASH_FOREACH_END();
+}
+
 /* {{{ proto array glob(string pattern [, int flags])
    Find pathnames matching a pattern */
 static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
@@ -1441,11 +1464,11 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	zend_long flags;
 	char *instname=NULL, *templname=NULL, *mask=NULL, *path=NULL;
 	zval instdata, templdata;
-	zval *src_entry;
 	HashTable *mergedata;
 	void *dummy = (void *)1;
 	int instlen, templen;
 	int skip_template=0;
+	zval *original_return_value = return_value;  /* Save the original pointer */
 
 	if(!SHADOW_ENABLED()) {
 		orig_glob(INTERNAL_FUNCTION_PARAM_PASSTHRU);
@@ -1531,13 +1554,7 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 		/* call with template */
 		if(shadow_call_replace_name(0, templname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU) == SUCCESS && Z_TYPE_P(return_value) == IS_ARRAY) {
 			/* cut off instname and put path part there */
-			ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(return_value), src_entry) {
-				char *mergepath;
-				if (Z_TYPE_P(src_entry) != IS_STRING) continue; /* weird, glob shouldn't do that to us */
-				spprintf(&mergepath, MAXPATHLEN, "%s/%s", path, Z_STRVAL_P(src_entry)+templen+1);
-				zend_hash_str_add_new_ptr(mergedata, mergepath, strlen(mergepath), dummy);
-				efree(mergepath);
-			} ZEND_HASH_FOREACH_END();
+			shadow_glob_add_to_hash(mergedata, return_value, path, templen, dummy, 1);
 		} else {
 			/* ignore problems here - other one may pick it up */
 			array_init(return_value);
@@ -1553,22 +1570,27 @@ static void shadow_glob(INTERNAL_FUNCTION_PARAMETERS)
 	/* call with instance */
 	if(shadow_call_replace_name(0, instname, orig_glob, INTERNAL_FUNCTION_PARAM_PASSTHRU) == SUCCESS && Z_TYPE_P(return_value) == IS_ARRAY) {
 		/* merge data */
-		ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(return_value), src_entry) {
-			char *mergepath;
-			if (Z_TYPE_P(src_entry) != IS_STRING) continue; /* weird, glob shouldn't do that to us */
-			spprintf(&mergepath, MAXPATHLEN, "%s/%s", path, Z_STRVAL_P(src_entry)+instlen+1);
-			zend_hash_str_add_ptr(mergedata, mergepath, strlen(mergepath), dummy);
-			efree(mergepath);
-		} ZEND_HASH_FOREACH_END();
+		shadow_glob_add_to_hash(mergedata, return_value, path, instlen, dummy, 0);
 	}
 	zval_dtor(return_value);
 	return_value = &templdata;
 	/* convert mergedata to return */
-	zend_hash_clean(Z_ARRVAL_P(return_value));
-	zend_string *filename_zs;
-	ZEND_HASH_FOREACH_STR_KEY(mergedata, filename_zs) {
-		add_next_index_str(return_value, zend_string_copy(filename_zs));
-	} ZEND_HASH_FOREACH_END();
+	if (Z_TYPE_P(return_value) == IS_ARRAY && Z_ARR_P(return_value) != &zend_empty_array) {
+		zend_hash_clean(Z_ARRVAL_P(return_value));
+	} else {
+		array_init(return_value);
+	}
+	zend_string *name = NULL;
+	zend_ulong num;
+	zend_hash_internal_pointer_reset(mergedata);
+	while (zend_hash_get_current_key(mergedata, &name, &num) == HASH_KEY_IS_STRING) {
+		if (name && ZSTR_VAL(name) && ZSTR_LEN(name)) {
+			add_next_index_str(return_value, zend_string_copy(name));
+		}
+		zend_hash_move_forward(mergedata);
+	}
+	/* CRITICAL: Copy templdata back to the ORIGINAL return_value pointer */
+	ZVAL_COPY_VALUE(original_return_value, &templdata);
 	/* cleanup */
 	zend_hash_clean(mergedata);
 	zend_hash_destroy(mergedata);

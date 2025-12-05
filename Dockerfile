@@ -1,6 +1,7 @@
 FROM rockylinux:9
 
-# Set arguments for directory paths
+# Set arguments for directory paths and PHP version
+ARG PHP_VERSION=8.5
 ARG PHP_BUILD_DIR=/var/task
 ARG PHP_CONF_DIR=/etc/php.d
 ARG PHP_EXT_DIR=/usr/lib64/php/modules
@@ -14,10 +15,10 @@ RUN dnf -y update && \
                    bzip2 bzip2-devel libpng-devel libjpeg-devel \
                    freetype-devel oniguruma-devel libzip-devel zlib-devel
 
-# Enable Remi repository for PHP 8.4
+# Enable Remi repository for specified PHP version (default 8.5)
 RUN dnf -y install https://rpms.remirepo.net/enterprise/remi-release-9.rpm && \
     dnf module reset php -y && \
-    dnf module enable php:remi-8.4 -y && \
+    dnf module enable php:remi-${PHP_VERSION} -y && \
     dnf -y install php php-cli php-devel php-pear
 
 # Prepare directories for building the PHP extension

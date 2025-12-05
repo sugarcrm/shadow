@@ -9,19 +9,31 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2', '8.3', '8.4', '8.5']
+    
+    name: PHP ${{ matrix.php-version }}
     
     steps:
     - uses: actions/checkout@v4
       
-    - name: Build and test PHP extension
+    - name: Build and test PHP extension (PHP ${{ matrix.php-version }})
       run: |
-        docker build -t php-shadow-extension . --progress=plain
+        docker build -t php-shadow-extension-${{ matrix.php-version }} . --progress=plain \
+          --build-arg PHP_VERSION=${{ matrix.php-version }}
+      
+    - name: Verify extension loaded
+      run: |
+        docker run --rm php-shadow-extension-${{ matrix.php-version }} php -v
+        docker run --rm php-shadow-extension-${{ matrix.php-version }} php -m | grep shadow
       
     - name: Archive test results
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: test-results
+        name: test-results-php-${{ matrix.php-version }}
         path: |
           /var/task/shadow/*.out
           /var/task/shadow/*.diff
