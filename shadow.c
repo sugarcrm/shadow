@@ -1054,7 +1054,7 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *pa
 	php_stream *tempdir = NULL, *instdir, *mergestream;
 	HashTable *mergedata;
 	php_stream_dirent entry;
-	void *dummy = (void *)1;
+	/* void *dummy = (void *)1; // Removed dummy, will store d_type */
 	char *templname = NULL;
 
 	if(options & STREAM_USE_GLOB_DIR_OPEN) {
@@ -1115,12 +1115,12 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *pa
 	tempdir->flags |= PHP_STREAM_FLAG_NO_BUFFER;
 
 	ALLOC_HASHTABLE(mergedata);
-	zend_hash_init(mergedata, 10, NULL, NULL, 0);
+	zend_hash_init(mergedata, 10, NULL, NULL, 0); /* Value destructor is NULL, suitable for storing d_type as pointer-cast value */
 	while(php_stream_readdir(tempdir, &entry)) {
-		zend_hash_str_add_new_ptr(mergedata, entry.d_name, strlen(entry.d_name), &dummy);
+		zend_hash_str_add_ptr(mergedata, entry.d_name, strlen(entry.d_name), (void*)(zend_uintptr_t)entry.d_type);
 	}
 	while(php_stream_readdir(instdir, &entry)) {
-		zend_hash_str_update_ptr(mergedata, entry.d_name, strlen(entry.d_name), &dummy);
+		zend_hash_str_update_ptr(mergedata, entry.d_name, strlen(entry.d_name), (void*)(zend_uintptr_t)entry.d_type);
 	}
 	zend_hash_internal_pointer_reset(mergedata);
 	php_stream_free(instdir, PHP_STREAM_FREE_CLOSE);
@@ -1142,6 +1142,7 @@ static ssize_t shadow_dirstream_read(php_stream *stream, char *buf, size_t count
 	HashTable *mergedata = (HashTable *)stream->abstract;
 	zend_string *name = NULL;
 	zend_ulong num;
+	void *pData;
 
 	/* avoid problems if someone mis-uses the stream */
 	if (count != sizeof(php_stream_dirent))
@@ -1156,6 +1157,13 @@ static ssize_t shadow_dirstream_read(php_stream *stream, char *buf, size_t count
 	zend_hash_move_forward(mergedata);
 
 	PHP_STRLCPY(ent->d_name, ZSTR_VAL(name), sizeof(ent->d_name), ZSTR_LEN(name));
+	if (zend_hash_get_current_data_ptr(mergedata, &pData) == SUCCESS) {
+		ent->d_type = (unsigned char)(zend_uintptr_t)pData;
+	} else {
+		/* This case should ideally not be reached if the key exists. */
+		/* Default to DT_UNKNOWN if data retrieval fails for some reason. */
+		ent->d_type = DT_UNKNOWN;
+	}
 	return sizeof(php_stream_dirent);
 }
 
