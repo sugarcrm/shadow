@@ -17,6 +17,26 @@
 #include <fcntl.h>
 #include "shadow_cache.h"
 #include "ext/standard/php_filestat.h"
+#include <sys/stat.h> // For S_ISDIR and struct stat
+#include <php_main.h> // For php_stream_dirent, PHP_MAXPATHLEN
+// #include "php_fs.h"     // For php_sys_stat, VCWD_STAT, DT_* constants if available - Replaced by dirent.h
+#include <dirent.h>     // For DT_DIR, DT_REG, DT_UNKNOWN if available
+
+// Define DT_DIR, DT_REG, DT_UNKNOWN if not available from system headers (like dirent.h)
+#ifndef DT_DIR
+#define DT_DIR 4
+#endif
+#ifndef DT_REG
+#define DT_REG 8
+#endif
+#ifndef DT_UNKNOWN
+#define DT_UNKNOWN 0
+#endif
+
+typedef struct _shadow_dir_entry_info {
+    char d_name[256]; // Based on common dirent.d_name size
+    unsigned char d_type;
+} shadow_dir_entry_info;
 
 #if PHP_VERSION_ID < 50600
 #define cwd_state_estrdup(str) strdup(str);
@@ -37,6 +57,12 @@ typedef struct _shadow_function {
 PHP_FUNCTION(shadow);
 PHP_FUNCTION(shadow_get_config);
 PHP_FUNCTION(shadow_clear_cache);
+
+static void php_shadow_free_entry_ptr(void *ptr) {
+    if (ptr) {
+        efree(ptr);
+    }
+}
 
 static php_stream_wrapper_ops shadow_wrapper_ops;
 php_stream_wrapper shadow_wrapper = {
@@ -1054,8 +1080,13 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *pa
 	php_stream *tempdir = NULL, *instdir, *mergestream;
 	HashTable *mergedata;
 	php_stream_dirent entry;
-	void *dummy = (void *)1;
+	// void *dummy = (void *)1; // No longer needed with shadow_dir_entry_info
 	char *templname = NULL;
+
+	php_stream_statbuf ssb;
+	char full_path[MAXPATHLEN];
+	shadow_dir_entry_info *new_entry_info;
+	shadow_dir_entry_info *existing_entry_info;
 
 	if(options & STREAM_USE_GLOB_DIR_OPEN) {
 		/* not dealing with globs yet */
@@ -1102,11 +1133,15 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *pa
 		}
 		if(SHADOW_ENABLED() && SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Opening templdir: %s\n", templname);
 		tempdir = plain_ops->dir_opener(wrapper, templname, mode, options&(~REPORT_ERRORS), opened_path, context STREAMS_CC);
-		efree(templname);
+		// efree(templname); // Moved after its use in the loop
 	}
-	efree(instname);
+	// efree(instname); // Moved after its use in the loop
 	if(!tempdir) {
 		/* template dir failed, return just instance */
+		// If instdir is returned, instname should be freed if it was allocated.
+		// If tempdir failed, templname (if allocated) should also be freed.
+		if (instname) { efree(instname); instname = NULL; }
+		if (templname) { efree(templname); templname = NULL; }
 		return instdir;
 	}
 	/* now we have both dirs, so we need to create a merge dir */
@@ -1115,13 +1150,77 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *pa
 	tempdir->flags |= PHP_STREAM_FLAG_NO_BUFFER;
 
 	ALLOC_HASHTABLE(mergedata);
-	zend_hash_init(mergedata, 10, NULL, NULL, 0);
-	while(php_stream_readdir(tempdir, &entry)) {
-		zend_hash_str_add_new_ptr(mergedata, entry.d_name, strlen(entry.d_name), &dummy);
+	zend_hash_init(mergedata, 10, NULL, (dtor_func_t)php_shadow_free_entry_ptr, 0);
+
+	// Loop for tempdir
+	if (tempdir) {
+		php_stream_rewinddir(tempdir);
+		while(php_stream_readdir(tempdir, &entry)) {
+			// Removed if block for "." and ".."
+
+			// templname is the base path of the template directory being iterated
+			snprintf(full_path, MAXPATHLEN - 1, "%s%c%s", templname, DEFAULT_SLASH, entry.d_name);
+			full_path[MAXPATHLEN - 1] = '\0';
+
+			new_entry_info = (shadow_dir_entry_info *)emalloc(sizeof(shadow_dir_entry_info));
+			strncpy(new_entry_info->d_name, entry.d_name, sizeof(new_entry_info->d_name) - 1);
+			new_entry_info->d_name[sizeof(new_entry_info->d_name) - 1] = '\0';
+
+			if (plain_ops->url_stat && plain_ops->url_stat(wrapper, full_path, PHP_STREAM_URL_STAT_QUIET, &ssb, context) == 0) {
+				new_entry_info->d_type = (S_ISDIR(ssb.sb.st_mode)) ? DT_DIR : DT_REG;
+			} else {
+				new_entry_info->d_type = DT_UNKNOWN;
+				if(SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Shadow: Stat failed for template path %s\n", full_path);
+			}
+			zend_hash_str_add_ptr(mergedata, new_entry_info->d_name, strlen(new_entry_info->d_name), new_entry_info);
+		}
 	}
-	while(php_stream_readdir(instdir, &entry)) {
-		zend_hash_str_update_ptr(mergedata, entry.d_name, strlen(entry.d_name), &dummy);
+	if (templname) { efree(templname); templname = NULL; }
+
+	// Loop for instdir
+	if (instdir) {
+		php_stream_rewinddir(instdir);
+		while(php_stream_readdir(instdir, &entry)) {
+			if (SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) {
+				fprintf(stderr, "Shadow [DEBUG INSTDIR]: In dir '%s', read entry: '%s' from instance stream.\n", instname, entry.d_name);
+			}
+			// Removed if block for "." and ".."
+
+			// instname is the base path of the instance directory being iterated
+			snprintf(full_path, MAXPATHLEN - 1, "%s%c%s", instname, DEFAULT_SLASH, entry.d_name);
+			full_path[MAXPATHLEN - 1] = '\0';
+
+			new_entry_info = (shadow_dir_entry_info *)emalloc(sizeof(shadow_dir_entry_info));
+			strncpy(new_entry_info->d_name, entry.d_name, sizeof(new_entry_info->d_name) - 1);
+			new_entry_info->d_name[sizeof(new_entry_info->d_name) - 1] = '\0';
+
+			if (plain_ops->url_stat && plain_ops->url_stat(wrapper, full_path, PHP_STREAM_URL_STAT_QUIET, &ssb, context) == 0) {
+				new_entry_info->d_type = (S_ISDIR(ssb.sb.st_mode)) ? DT_DIR : DT_REG;
+			} else {
+				new_entry_info->d_type = DT_UNKNOWN;
+				if(SHADOW_G(debug) & SHADOW_DEBUG_OPENDIR) fprintf(stderr, "Shadow: Stat failed for instance path %s\n", full_path);
+			}
+
+			// --- Previous diagnostic block removed ---
+
+			// existing_entry_info is declared at the top of the function.
+			// For clarity in this block, let's use a more specific name for the find result.
+			shadow_dir_entry_info *entry_from_template;
+			entry_from_template = zend_hash_str_find_ptr(mergedata, new_entry_info->d_name, strlen(new_entry_info->d_name));
+
+			if (entry_from_template) {
+				// Entry was also found in the template. Free the template's entry data.
+				efree(entry_from_template);
+				// Update the HashTable to point to the new instance entry's data.
+				zend_hash_str_update_ptr(mergedata, new_entry_info->d_name, strlen(new_entry_info->d_name), new_entry_info);
+			} else {
+				// This entry is unique to the instance directory. Add it.
+				zend_hash_str_add_ptr(mergedata, new_entry_info->d_name, strlen(new_entry_info->d_name), new_entry_info);
+			}
+		}
 	}
+	if (instname) { efree(instname); instname = NULL; }
+
 	zend_hash_internal_pointer_reset(mergedata);
 	php_stream_free(instdir, PHP_STREAM_FREE_CLOSE);
 	php_stream_free(tempdir, PHP_STREAM_FREE_CLOSE);
@@ -1140,23 +1239,37 @@ static ssize_t shadow_dirstream_read(php_stream *stream, char *buf, size_t count
 {
 	php_stream_dirent *ent = (php_stream_dirent*)buf;
 	HashTable *mergedata = (HashTable *)stream->abstract;
-	zend_string *name = NULL;
-	zend_ulong num;
+	shadow_dir_entry_info *current_entry_info;
+	// zend_string *current_key; // Not strictly needed if d_name is in current_entry_info
+	// zend_ulong num_key;
 
 	/* avoid problems if someone mis-uses the stream */
-	if (count != sizeof(php_stream_dirent))
-		return 0;
+	if (count != sizeof(php_stream_dirent)) {
+		return 0; /* count is the size of the buffer, should be sizeof(php_stream_dirent) */
+	}
 
-	if (zend_hash_get_current_key(mergedata, &name, &num) != HASH_KEY_IS_STRING) {
-		return 0;
+	// Get the current data pointer from the hash table's internal cursor
+	current_entry_info = (shadow_dir_entry_info *)zend_hash_get_current_data_ptr(mergedata);
+
+	if (current_entry_info == NULL) {
+		return 0; // No more entries or error
 	}
-	if(!ZSTR_VAL(name) || !ZSTR_LEN(name)) {
-		return 0;
-	}
+
+	// Populate php_stream_dirent from our shadow_dir_entry_info
+	// strncpy is safer as PHP_STRLCPY is a macro with potentially complex behavior.
+	strncpy(ent->d_name, current_entry_info->d_name, sizeof(ent->d_name) - 1);
+	ent->d_name[sizeof(ent->d_name) - 1] = '\0'; // Ensure null termination
+
+#if defined(HAVE_DIRENT_H) || defined(PHP_WIN32) || defined(DT_UNKNOWN)
+	// Set d_type if the system dirent structure supports it or if our DT_* constants are defined.
+	// php_stream_dirent typically includes d_type.
+	ent->d_type = current_entry_info->d_type;
+#endif
+
+	// Move cursor to the next element for the next call to shadow_dirstream_read
 	zend_hash_move_forward(mergedata);
 
-	PHP_STRLCPY(ent->d_name, ZSTR_VAL(name), sizeof(ent->d_name), ZSTR_LEN(name));
-	return sizeof(php_stream_dirent);
+	return sizeof(php_stream_dirent); // Report one entry read
 }
 
 static int shadow_dirstream_close(php_stream *stream, int close_handle)
