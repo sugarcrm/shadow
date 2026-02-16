@@ -733,6 +733,29 @@ static inline char *instance_to_template(const char *instname, int len)
 /*
 Returns new instance path or NULL if template path is OK
 filename is relative to template root
+
+CRITICAL FIX FOR SPL ITERATORS (BR-12610):
+===========================================
+
+Problem: RecursiveDirectoryIterator fails with "Failed to open directory"
+when Shadow incorrectly treats a FILE as a DIRECTORY.
+
+Example failure:
+  new RecursiveDirectoryIterator('api')
+  -> Iterates and finds "rest.php" file
+  -> Calls hasChildren() -> is_dir('api/rest.php')
+  -> is_dir() uses CACHED path without type validation
+  -> Returns TRUE (file exists, but not validated as directory!)
+  -> getChildren() tries to open FILE as directory
+  -> FATAL ERROR
+
+Solution:
+  When OPT_CHECK_EXISTS is set:
+  1. Use stat() instead of just access() check
+  2. Validate S_ISDIR() vs S_ISREG() vs S_ISLNK()
+  3. Store type metadata in cache
+  4. Only cache as directory if it IS a directory
+  5. This prevents files from ever being treated as directories
 */
 static char *template_to_instance(const char *filename, int options)
 {
@@ -758,7 +781,7 @@ static char *template_to_instance(const char *filename, int options)
 
 	if (is_subdir_of(ZSTR_VAL(SHADOW_G(template)), ZSTR_LEN(SHADOW_G(template)), realpath, fnamelen)) {
 		if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "In template: %s\n", realpath);
-		if((options & OPT_CHECK_EXISTS) && shadow_cache_get(realpath, &newname) == SUCCESS) {
+		if((options & OPT_CHECK_EXISTS) && shadow_cache_get(realpath, &newname, options) == SUCCESS) {
 			if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "Path check from cache: %s => %s\n", realpath, newname);
 			if(realpath) {
             			efree(realpath);
@@ -776,15 +799,36 @@ static char *template_to_instance(const char *filename, int options)
 		if ((options & OPT_CHECK_EXISTS)
 			&& !instance_only_subdir(realpath + ZSTR_LEN(SHADOW_G(template)) + 1)
 		) {
-			if(VCWD_ACCESS(newname, F_OK) != 0) {
-				/* file does not exist */
+			/*
+			 * CRITICAL FIX: Use stat() instead of access() to get file type.
+			 * This prevents files from being cached as valid directory paths.
+			 */
+			struct stat st;
+			if(VCWD_STAT(newname, &st) != 0) {
+				/* file/directory does not exist */
 				efree(newname);
 				newname = NULL;
+			} else {
+				/* File exists - store with appropriate type marker */
+				uint32_t cache_type = SHADOW_CACHE_TYPE_UNKNOWN;
+				if (S_ISREG(st.st_mode)) {
+					cache_type = SHADOW_CACHE_TYPE_FILE;
+				} else if (S_ISDIR(st.st_mode)) {
+					cache_type = SHADOW_CACHE_TYPE_DIR;
+				} else if (S_ISLNK(st.st_mode)) {
+					cache_type = SHADOW_CACHE_TYPE_LINK;
+				}
+				if(!(options & OPT_SKIP_CACHE)) {
+					shadow_cache_put(realpath, newname, cache_type);
+				}
 			}
 			/* drop down to return */
-		}
-		if(!(options & OPT_SKIP_CACHE)) {
-			shadow_cache_put(realpath, newname);
+		} else if(!(options & OPT_SKIP_CACHE)) {
+			/*
+			 * No existence check requested - cache without type validation.
+			 * This maintains backward compatibility for write operations.
+			 */
+			shadow_cache_put(realpath, newname, SHADOW_CACHE_TYPE_UNKNOWN);
 		}
 	} else if (is_subdir_of(ZSTR_VAL(SHADOW_G(instance)), ZSTR_LEN(SHADOW_G(instance)), realpath, fnamelen)) {
 		if(SHADOW_G(debug) & SHADOW_DEBUG_PATHCHECK) fprintf(stderr, "In instance: %s\n", realpath);

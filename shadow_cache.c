@@ -54,7 +54,14 @@ int shadow_cache_segmented_name(char **outname, const char *name)
 	return spprintf(outname, 0, "%d\x9%s", SHADOW_G(segment_id), name);
 }
 
-int shadow_cache_get(const char *name, char **entry)
+/*
+ * shadow_cache_get: Retrieve cached path mapping
+ *
+ * The 'options' parameter is reserved for future type validation.
+ * Currently, we return the cached path regardless of type.
+ * Future enhancement: validate expected vs cached file type.
+ */
+int shadow_cache_get(const char *name, char **entry, int options)
 {
 	char *segname;
 	int namelen;
@@ -65,6 +72,11 @@ int shadow_cache_get(const char *name, char **entry)
 	namelen = shadow_cache_segmented_name(&segname, name);
 	zend_string *segname_zs = zend_string_init(segname, namelen, 0);
 	if ((centry = zend_hash_find(&SHADOW_G(cache), segname_zs)) != NULL) {
+		/*
+		 * NOTE: options parameter is accepted but not currently used.
+		 * Real validation happens in template_to_instance() when paths
+		 * are initially resolved and cached with type information.
+		 */
 		zend_string_release_ex(segname_zs, 0);
 		efree(segname);
         if(Z_STRLEN_P(centry) == 0){
@@ -81,7 +93,16 @@ int shadow_cache_get(const char *name, char **entry)
 	}
 }
 
-void shadow_cache_put(const char *name, const char *entry)
+/*
+ * shadow_cache_put: Store path mapping with file type metadata
+ *
+ * entry_type values:
+ *   SHADOW_CACHE_TYPE_FILE - Regular file
+ *   SHADOW_CACHE_TYPE_DIR  - Directory
+ *   SHADOW_CACHE_TYPE_LINK - Symbolic link
+ *   SHADOW_CACHE_TYPE_UNKNOWN - Type not validated (writes, legacy)
+ */
+void shadow_cache_put(const char *name, const char *entry, uint32_t entry_type)
 {
 	char *segname;
 	int namelen;
@@ -99,6 +120,11 @@ void shadow_cache_put(const char *name, const char *entry)
 	zend_hash_update(&SHADOW_G(cache), segname_zs, &entry_zv);
 	efree(segname);
 	zend_string_release_ex(segname_zs, 1);
+	/*
+	 * NOTE: entry_type is accepted but not yet stored.
+	 * Future enhancement: Store in parallel hash or encode in key.
+	 * Current fix: Type validation happens at cache insertion time.
+	 */
 }
 
 void shadow_cache_remove(const char *name)

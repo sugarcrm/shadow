@@ -44,6 +44,14 @@ PHP_MINFO_FUNCTION(shadow);
 #define SHADOW_DEBUG_CHMOD		(1<<11)
 #define SHADOW_DEBUG_OVERRIDE	(1<<12)
 
+/* Cache entry types - for future use in type validation */
+#define SHADOW_CACHE_TYPE_UNKNOWN  0x00
+#define SHADOW_CACHE_TYPE_FILE     0x01
+#define SHADOW_CACHE_TYPE_DIR      0x02
+#define SHADOW_CACHE_TYPE_LINK     0x03
+#define SHADOW_CACHE_TYPE_MASK     0xFF
+#define SHADOW_CACHE_TYPE_SHIFT    24
+
 ZEND_BEGIN_MODULE_GLOBALS(shadow)
 	/* config vars */
 	zend_bool enabled;
