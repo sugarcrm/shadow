@@ -1,0 +1,22 @@
+Iterating: /app/tests/fixtures/instance/mixtype_test (LEAVES_ONLY)
+Path: instance_dir/.gitkeep, Type: file, isDir: 0, isFile: 1
+Path: instance_file.txt, Type: file, isDir: 0, isFile: 1
+Path: shared_dir/another_instance_file_in_shared_dir.txt, Type: file, isDir: 0, isFile: 1
+Path: shared_dir/shared_dir_instance_file.txt, Type: file, isDir: 0, isFile: 1
+Path: shared_dir/shared_dir_template_file.txt, Type: file, isDir: 0, isFile: 1
+Path: shared_file.txt, Type: file, isDir: 0, isFile: 1
+Path: template_dir/.gitkeep, Type: file, isDir: 0, isFile: 1
+Path: template_file.txt, Type: file, isDir: 0, isFile: 1
+
+Iterating: /app/tests/fixtures/instance/mixtype_test (SELF_FIRST)
+Path: template_file.txt, Type: file, isDir: 0, isFile: 1
+Path: instance_dir, Type: dir, isDir: 1, isFile: 0
+Path: instance_dir/.gitkeep, Type: file, isDir: 0, isFile: 1
+Path: instance_file.txt, Type: file, isDir: 0, isFile: 1
+Path: shared_dir, Type: dir, isDir: 1, isFile: 0
+Path: shared_dir/another_instance_file_in_shared_dir.txt, Type: file, isDir: 0, isFile: 1
+Path: shared_dir/shared_dir_instance_file.txt, Type: file, isDir: 0, isFile: 1
+Path: shared_dir/shared_dir_template_file.txt, Type: file, isDir: 0, isFile: 1
+Path: shared_file.txt, Type: file, isDir: 0, isFile: 1
+Path: template_dir, Type: dir, isDir: 1, isFile: 0
+Path: template_dir/.gitkeep, Type: file, isDir: 0, isFile: 1

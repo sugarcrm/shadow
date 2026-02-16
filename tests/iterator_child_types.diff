@@ -1,0 +1,14 @@
+--
+     Path: template_file.txt, Type: file, isDir: 0, isFile: 1
+
+     Iterating: %s/instance/mixtype_test (SELF_FIRST)
+012- Path: ., Type: dir, isDir: 1, isFile: 0
+012+ Path: template_file.txt, Type: file, isDir: 0, isFile: 1
+     Path: instance_dir, Type: dir, isDir: 1, isFile: 0
+     Path: instance_dir/.gitkeep, Type: file, isDir: 0, isFile: 1
+     Path: instance_file.txt, Type: file, isDir: 0, isFile: 1
+--
+     Path: shared_file.txt, Type: file, isDir: 0, isFile: 1
+     Path: template_dir, Type: dir, isDir: 1, isFile: 0
+     Path: template_dir/.gitkeep, Type: file, isDir: 0, isFile: 1
+023- Path: template_file.txt, Type: file, isDir: 0, isFile: 1

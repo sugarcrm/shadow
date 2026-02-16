@@ -1054,7 +1054,7 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *pa
 	php_stream *tempdir = NULL, *instdir, *mergestream;
 	HashTable *mergedata;
 	php_stream_dirent entry;
-	void *dummy = (void *)1;
+	// void *dummy = (void *)1; // Replaced by type_ptr_temp and type_ptr_inst
 	char *templname = NULL;
 
 	if(options & STREAM_USE_GLOB_DIR_OPEN) {
@@ -1115,12 +1115,14 @@ static php_stream *shadow_dir_opener(php_stream_wrapper *wrapper, const char *pa
 	tempdir->flags |= PHP_STREAM_FLAG_NO_BUFFER;
 
 	ALLOC_HASHTABLE(mergedata);
-	zend_hash_init(mergedata, 10, NULL, NULL, 0);
+	zend_hash_init(mergedata, 10, NULL, NULL, 0); // Using NULL for dtor as type_ptr is simple
 	while(php_stream_readdir(tempdir, &entry)) {
-		zend_hash_str_add_new_ptr(mergedata, entry.d_name, strlen(entry.d_name), &dummy);
+		void *type_ptr_temp = (void *)(uintptr_t)(entry.d_type + 1);
+		zend_hash_str_add_new_ptr(mergedata, entry.d_name, strlen(entry.d_name), type_ptr_temp);
 	}
 	while(php_stream_readdir(instdir, &entry)) {
-		zend_hash_str_update_ptr(mergedata, entry.d_name, strlen(entry.d_name), &dummy);
+		void *type_ptr_inst = (void *)(uintptr_t)(entry.d_type + 1);
+		zend_hash_str_update_ptr(mergedata, entry.d_name, strlen(entry.d_name), type_ptr_inst);
 	}
 	zend_hash_internal_pointer_reset(mergedata);
 	php_stream_free(instdir, PHP_STREAM_FREE_CLOSE);
@@ -1140,22 +1142,37 @@ static ssize_t shadow_dirstream_read(php_stream *stream, char *buf, size_t count
 {
 	php_stream_dirent *ent = (php_stream_dirent*)buf;
 	HashTable *mergedata = (HashTable *)stream->abstract;
-	zend_string *name = NULL;
-	zend_ulong num;
+	zend_string *current_entry_name_key = NULL;
+	zend_ulong current_entry_num_key;
+	void *current_entry_type_ptr;
 
-	/* avoid problems if someone mis-uses the stream */
-	if (count != sizeof(php_stream_dirent))
-		return 0;
-
-	if (zend_hash_get_current_key(mergedata, &name, &num) != HASH_KEY_IS_STRING) {
+	if (count != sizeof(php_stream_dirent)) { /* avoid problems if someone mis-uses the stream */
 		return 0;
 	}
-	if(!ZSTR_VAL(name) || !ZSTR_LEN(name)) {
+
+	current_entry_type_ptr = zend_hash_get_current_data_ptr(mergedata); // Get data for current entry
+	if (zend_hash_get_current_key(mergedata, &current_entry_name_key, &current_entry_num_key) != HASH_KEY_IS_STRING) {
+		return 0; // No more entries or error
+	}
+
+	// It's good practice to check if current_entry_name_key is not NULL and has a valid length,
+	// though HASH_KEY_IS_STRING should generally ensure ZSTR_VAL is safe.
+	if (!current_entry_name_key || ZSTR_LEN(current_entry_name_key) == 0) {
+		// This might indicate an issue or an empty key, though rare for directory entries.
 		return 0;
 	}
+
+	PHP_STRLCPY(ent->d_name, ZSTR_VAL(current_entry_name_key), sizeof(ent->d_name), ZSTR_LEN(current_entry_name_key));
+
+	if (current_entry_type_ptr) {
+		ent->d_type = (unsigned char)((uintptr_t)current_entry_type_ptr - 1);
+	} else {
+		// This case should ideally not be reached if the key was valid and data was stored.
+		// Default to DT_UNKNOWN if something went wrong during storage or retrieval.
+		ent->d_type = 0; // DT_UNKNOWN is often 0
+	}
+
 	zend_hash_move_forward(mergedata);
-
-	PHP_STRLCPY(ent->d_name, ZSTR_VAL(name), sizeof(ent->d_name), ZSTR_LEN(name));
 	return sizeof(php_stream_dirent);
 }
 

@@ -1,0 +1,61 @@
+     Iterating: %s/templatedir/api
+002- Path: $template/api, isDir: 1, isFile: 0
+     Path: $template/api/rest.php, isDir: 0, isFile: 1
+004- Count for %s/templatedir/api: 2
+003+ Count for /app/tests/fixtures/templatedir/api: 1
+
+     Iterating: /app/tests/fixtures/instance/qwe
+007- Path: $instance/qwe, isDir: 1, isFile: 0
+     Path: $instance/qwe/modulebuilder, isDir: 1, isFile: 0
+     Path: $instance/qwe/modulebuilder/builds, isDir: 1, isFile: 0
+     Path: $instance/qwe/modulebuilder/builds/qweqwe, isDir: 1, isFile: 0
+     Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules, isDir: 1, isFile: 0
+     Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules, isDir: 1, isFile: 0
+011+ Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts, isDir: 1, isFile: 0
+012+ Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts/.gitkeep, isDir: 0, isFile: 1
+013+ Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks, isDir: 1, isFile: 0
+014+ Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks/.gitkeep, isDir: 0, isFile: 1
+     Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts, isDir: 1, isFile: 0
+     Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Accounts/.gitkeep, isDir: 0, isFile: 1
+015- Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls, isDir: 1, isFile: 0
+016- Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/.gitkeep, isDir: 0, isFile: 1
+017+ Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers, isDir: 1, isFile: 0
+018+ Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers/.gitkeep, isDir: 0, isFile: 1
+019+ Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents, isDir: 1, isFile: 0
+020+ Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents/.gitkeep, isDir: 0, isFile: 1
+021+ Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project, isDir: 1, isFile: 0
+022+ Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project/.gitkeep, isDir: 0, isFile: 1
+     Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases, isDir: 1, isFile: 0
+     Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Cases/.gitkeep, isDir: 0, isFile: 1
+019- Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts, isDir: 1, isFile: 0
+020- Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Contacts/.gitkeep, isDir: 0, isFile: 1
+021- Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents, isDir: 1, isFile: 0
+022- Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Documents/.gitkeep, isDir: 0, isFile: 1
+023- Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers, isDir: 1, isFile: 0
+024- Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/ExternalUsers/.gitkeep, isDir: 0, isFile: 1
+     Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings, isDir: 1, isFile: 0
+     Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Meetings/.gitkeep, isDir: 0, isFile: 1
+027+ Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls, isDir: 1, isFile: 0
+028+ Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Calls/.gitkeep, isDir: 0, isFile: 1
+029+ Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems, isDir: 1, isFile: 0
+030+ Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems/.gitkeep, isDir: 0, isFile: 1
+031+ Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes, isDir: 1, isFile: 0
+032+ Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes/.gitkeep, isDir: 0, isFile: 1
+     Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages, isDir: 1, isFile: 0
+     Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Messages/.gitkeep, isDir: 0, isFile: 1
+029- Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes, isDir: 1, isFile: 0
+030- Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Notes/.gitkeep, isDir: 0, isFile: 1
+031- Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project, isDir: 1, isFile: 0
+032- Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Project/.gitkeep, isDir: 0, isFile: 1
+033- Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems, isDir: 1, isFile: 0
+034- Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/PurchasedLineItems/.gitkeep, isDir: 0, isFile: 1
+035- Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks, isDir: 1, isFile: 0
+036- Path: $instance/qwe/modulebuilder/builds/qweqwe/SugarModules/modules/Tasks/.gitkeep, isDir: 0, isFile: 1
+037- Count for %s/instance/qwe: 30
+035+ Count for /app/tests/fixtures/instance/qwe: 29
+
+     Iterating: /app/tests/fixtures/instance/api
+040- Path: $instance/api, isDir: 1, isFile: 0
+     Path: $instance/api/rest.php, isDir: 0, isFile: 1
+042- Count for %s/instance/api: 2
+039+ Count for /app/tests/fixtures/instance/api: 1
